@@ -2,26 +2,16 @@ using Expressions.Interfaces;
 
 namespace Expressions.Models;
 
-public class ActionExpresion(Action<object?[]> func, IExpression<object?>[] @params) : Expression
-{
-    public IExpression<object?>[] Params { get; protected set; } = @params;
-    public Action<object?[]> Func { get; protected set; } = func;
-
-    public override void Accept() => Func([.. Params.Select(x => x.Accept())]);
-}
-
-public class FuncExpresion<T>(Func<object?[], T> func, IExpression<object?>[] @params)
+public class FuncExpresion<T>(Func<dynamic[], T> func, IExpression<dynamic>[] @params)
     : Expression<T>
+    where T : notnull
 {
-    public IExpression<object?>[] Params { get; protected set; } = @params;
-    public Func<object?[], T> Func { get; protected set; } = func;
-
-    public override T Accept() => Func([.. Params.Select(x => x.Accept())]);
+    public override T Accept(IExpressionsVisitor visitor) =>
+        visitor.FuncVisit(func, [.. @params.Select(x => x.Accept(visitor))]);
 }
 
 public class ValueExpression<T>(T value) : Expression<T>, IExpression<T>
+    where T : notnull
 {
-    public T Value { get; protected set; } = value;
-
-    public override T Accept() => Value;
+    public override T Accept(IExpressionsVisitor visitor) => visitor.ValueVisit(value);
 }

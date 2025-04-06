@@ -2,8 +2,20 @@ using Expressions.Interfaces;
 
 namespace Expressions.Models;
 
-public abstract class BinaryExpression<T>(Expression<T> left, Expression<T> right) : Expression<T>
+public class BinaryExpression<T>(Expression<T> left, Expression<T> right, BinaryTypes type)
+    : Expression<T>
+    where T : notnull
 {
-    public IExpression<T> Left { get; protected set; } = left;
-    public IExpression<T> Right { get; protected set; } = right;
+    public override T Accept(IExpressionsVisitor visitor) =>
+        visitor.BinaryVisit(left.Accept(visitor), right.Accept(visitor), type);
 }
+
+public enum BinaryTypes
+{
+    Sum,
+    Sub,
+    Mult,
+    Div,
+}
+
+public enum ComparerTypes { }

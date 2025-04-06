@@ -4,10 +4,12 @@ namespace Expressions.Models;
 
 public abstract class Expression : IExpression
 {
-    public virtual void Accept() { }
+    public abstract void Accept(IExpressionsVisitor visitor);
 }
 
-public abstract class Expression<T> : Expression, IExpression<T>
+public abstract class Expression<T> : IExpression, IExpression<T>
 {
-    public new abstract T Accept();
+    public abstract T Accept(IExpressionsVisitor visitor);
+
+    void IExpression.Accept(IExpressionsVisitor visitor) => Accept(visitor);
 }

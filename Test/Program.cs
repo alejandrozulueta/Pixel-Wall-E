@@ -1,9 +1,7 @@
-﻿using Expressions;
+﻿using Expressions.Models;
+using Expressions.Visitors;
 
 class Program
 {
-    private static void Main(string[] args)
-    {
-        Console.WriteLine("Hello, World!");
-    }
+    private static void Main(string[] args) { }
 }

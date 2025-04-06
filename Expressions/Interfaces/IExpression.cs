@@ -2,10 +2,10 @@ namespace Expressions.Interfaces;
 
 public interface IExpression
 {
-    void Accept();
+    void Accept(IExpressionsVisitor visitor);
 }
 
 public interface IExpression<T> : IExpression
 {
-    new T Accept();
+    new T Accept(IExpressionsVisitor visitor);
 }
