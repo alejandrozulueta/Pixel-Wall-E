@@ -12,4 +12,5 @@ public class UnaryExpression<T>(Expression<T> expression, UnaryTypes type) : Exp
 public enum UnaryTypes
 {
     Factorial,
+    Not,
 }

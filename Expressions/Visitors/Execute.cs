@@ -1,10 +1,9 @@
-using System.Reflection;
 using Expressions.Interfaces;
 using Expressions.Models;
 
 namespace Expressions.Visitors;
 
-public class Execute : IExpressionsVisitor
+public class Execute : IExpressionsVisitor, IContext
 {
     public Dictionary<string, dynamic> LocalVariables { get; protected set; }
 
@@ -22,19 +21,33 @@ public class Execute : IExpressionsVisitor
             BinaryTypes.Sub => (T)((dynamic)operand1 - (dynamic)operand2),
             BinaryTypes.Mult => (T)((dynamic)operand1 * (dynamic)operand2),
             BinaryTypes.Div => (T)((dynamic)operand1 / (dynamic)operand2),
-            _ => throw new NotFiniteNumberException(),
+            BinaryTypes.And => (T)((dynamic)operand1 && (dynamic)operand2),
+            BinaryTypes.Or => (T)((dynamic)operand1 || (dynamic)operand2),
+            _ => throw new NotImplementedException(),
         };
 
-    public bool ComparerVisit<T>(T operand1, T operand2, ComparerTypes opType)
+    public K BinaryVisit<T, K>(T operand1, T operand2, BinaryTypes opType)
         where T : notnull
-    {
-        throw new NotImplementedException();
-    }
+        where K : notnull =>
+        opType switch
+        {
+            BinaryTypes.Equal => (K)((dynamic)operand1 == (dynamic)operand2),
+            BinaryTypes.Inequal => (K)((dynamic)operand1 != (dynamic)operand2),
+            BinaryTypes.Less => (K)((dynamic)operand1 < (dynamic)operand2),
+            BinaryTypes.Greater => (K)((dynamic)operand1 > (dynamic)operand2),
+            BinaryTypes.LessEqual => (K)((dynamic)operand1 <= (dynamic)operand2),
+            BinaryTypes.GreaterEqual => (K)((dynamic)operand1 >= (dynamic)operand2),
+            _ => throw new NotFiniteNumberException(),
+        };
 
     public T UnaryVisit<T>(T operand, UnaryTypes opType)
         where T : notnull
     {
-        throw new NotImplementedException();
+        return opType switch
+        {
+            UnaryTypes.Not => (T)!(dynamic)operand,
+            _ => throw new NotImplementedException(),
+        };
     }
 
     public T ValueVisit<T>(T value)
