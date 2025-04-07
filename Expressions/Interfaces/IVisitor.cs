@@ -4,16 +4,14 @@ namespace Expressions.Interfaces;
 
 public interface IExpressionsVisitor
 {
-    Dictionary<string, dynamic> LocalVariables { get; }
-    void Reset();
-
     void Visit(IExpression node);
     T UnaryVisit<T>(T operand, UnaryTypes opType)
         where T : notnull;
     T BinaryVisit<T>(T operand1, T operand2, BinaryTypes opType)
         where T : notnull;
-    bool ComparerVisit<T>(T operand1, T operand2, ComparerTypes opType)
-        where T : notnull;
+    K BinaryVisit<T, K>(T operand1, T operand2, BinaryTypes type)
+        where T : notnull
+        where K : notnull;
     T ValueVisit<T>(T value)
         where T : notnull;
     void AssingVisit<T>(string name, T value)
