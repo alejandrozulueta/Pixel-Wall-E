@@ -3,13 +3,13 @@ using Expressions.Models;
 
 namespace Expressions.Visitors;
 
-public class Execute : IExpressionsVisitor, IContext
+public class Execute(
+    Dictionary<string, dynamic>? variables = null,
+    Dictionary<string, Action<dynamic[]>>? actions = null,
+    Dictionary<string, Func<dynamic, dynamic[]>>? functions = null
+) : IExpressionsVisitor, IContext
 {
-    public Dictionary<string, dynamic> LocalVariables { get; protected set; }
-
-    public Execute() => LocalVariables = [];
-
-    public void Reset() => LocalVariables.Clear();
+    public Context Context { get; set; } = new Context(variables, actions, functions);
 
     public void Visit(IExpression node) => node.Accept(this);
 
@@ -54,10 +54,10 @@ public class Execute : IExpressionsVisitor, IContext
         where T : notnull => value;
 
     public void AssingVisit<T>(string name, T value)
-        where T : notnull => LocalVariables[name] = value;
+        where T : notnull => Context.Variables[name] = value;
 
     public T VariableVisit<T>(string name)
-        where T : notnull => LocalVariables[name];
+        where T : notnull => Context.Variables[name];
 
     public void ActionVisit(Action<dynamic[]> action, dynamic[] value) => action(value);
 

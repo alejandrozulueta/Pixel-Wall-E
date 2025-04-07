@@ -1,5 +1,4 @@
 interface IContext
 {
-    Dictionary<string, dynamic> LocalVariables { get; }
-    void Reset();
+    Context Context { get; set; }
 }
