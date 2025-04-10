@@ -63,4 +63,7 @@ public class Execute(
 
     public T FuncVisit<T>(Func<dynamic[], T> func, dynamic[] value)
         where T : notnull => func(value);
+
+    public void BlockVisit(IExpression[] expressions) =>
+        Array.ForEach(expressions, x => x.Accept(this));
 }

@@ -14,3 +14,8 @@ public class ActionExpresion(Action<dynamic[]> action, IExpression<dynamic>[] @p
     public override void Accept(IExpressionsVisitor visitor) =>
         visitor.ActionVisit(action, [.. @params.Select(x => x.Accept(visitor))]);
 }
+
+public class BlockExpression(IExpression[] expressions) : Expression
+{
+    public override void Accept(IExpressionsVisitor visitor) => visitor.BlockVisit(expressions);
+}
