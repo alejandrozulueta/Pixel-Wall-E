@@ -5,6 +5,7 @@ namespace Expressions.Interfaces;
 public interface IExpressionsVisitor
 {
     void Visit(IExpression node);
+    void BlockVisit(IExpression[] expressions);
     T UnaryVisit<T>(T operand, UnaryTypes opType)
         where T : notnull;
     T BinaryVisit<T>(T operand1, T operand2, BinaryTypes opType)

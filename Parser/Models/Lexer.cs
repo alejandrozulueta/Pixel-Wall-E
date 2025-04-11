@@ -5,7 +5,7 @@ namespace Parser.Models;
 
 public static class Lexer
 {
-    public static List<Tokens> Tokenizer(string input)
+    public static Tokens[] Tokenizer(string input)
     {
         Regex regex = new(
             @"((.+)?![a-zA-Z_][a-zA-Z0-9_]*:\s*)"
@@ -13,7 +13,7 @@ public static class Lexer
                 + @"|\d+"
                 + @"|(==|>=|<=)"
                 + @"|("".*"")"
-                + @"|([\[\]\(\)\+\-\*/=><])|\s+"
+                + @"|([\[\]\(\)\+\-\*/^=><])|\s+"
         );
 
         var split = input.Split("\n", StringSplitOptions.RemoveEmptyEntries);
@@ -37,7 +37,8 @@ public static class Lexer
             }
         }
 
-        return tokens;
+        tokens.Add(new Tokens(TokenType.EOS, "$", split.Length, 0));
+        return [.. tokens];
     }
 
     private static TokenType GetTokenType(string lex)
@@ -51,6 +52,7 @@ public static class Lexer
             "!" or "-" => TokenType.UnaryOperator,
             "(" => TokenType.OpenParenthesis,
             ")" => TokenType.CloseParenthesis,
+            "^" => TokenType.BinaryOperator,
             _ => TokenType.Identifier,
         };
 

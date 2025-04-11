@@ -6,10 +6,11 @@ namespace Expressions.Visitors;
 public class Execute(
     Dictionary<string, dynamic>? variables = null,
     Dictionary<string, Action<dynamic[]>>? actions = null,
-    Dictionary<string, Func<dynamic, dynamic[]>>? functions = null
+    Dictionary<string, Func<dynamic, dynamic[]>>? functions = null,
+    Dictionary<string, int>? labels = null
 ) : IExpressionsVisitor, IContext
 {
-    public Context Context { get; set; } = new Context(variables, actions, functions);
+    public Context Context { get; set; } = new Context(labels, variables, actions, functions);
 
     public void Visit(IExpression node) => node.Accept(this);
 
@@ -23,6 +24,7 @@ public class Execute(
             BinaryTypes.Div => (T)((dynamic)operand1 / (dynamic)operand2),
             BinaryTypes.And => (T)((dynamic)operand1 && (dynamic)operand2),
             BinaryTypes.Or => (T)((dynamic)operand1 || (dynamic)operand2),
+            BinaryTypes.Pow => (T)Math.Pow((dynamic)operand1, (dynamic)operand2),
             _ => throw new NotImplementedException(),
         };
 

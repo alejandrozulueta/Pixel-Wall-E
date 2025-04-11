@@ -15,3 +15,9 @@ public class ValueExpression<T>(T value) : Expression<T>, IExpression<T>
 {
     public override T Accept(IExpressionsVisitor visitor) => visitor.ValueVisit(value);
 }
+
+public class VariableExpression<T>(string name) : Expression<T>, IExpression<T>
+    where T : notnull
+{
+    public override T Accept(IExpressionsVisitor visitor) => visitor.VariableVisit<T>(name);
+}

@@ -2,7 +2,7 @@ using Expressions.Interfaces;
 
 namespace Expressions.Models;
 
-public class Assign<T>(string name, Expression<T> expression) : Expression
+public class Assign<T>(string name, IExpression<T> expression) : Expression
     where T : notnull
 {
     public override void Accept(IExpressionsVisitor visitor) =>

@@ -10,6 +10,7 @@ public enum TokenType
     AssingOperator,
     OpenParenthesis,
     CloseParenthesis,
+    EOS,
 }
 
 public class Tokens(TokenType type, string identifier, int row, int col)
