@@ -11,7 +11,6 @@ public class UnaryExpression<T>(IExpression<T> expression, UnaryTypes type) : Ex
 
 public enum UnaryTypes
 {
-    Factorial,
     Not,
     Neg,
 }

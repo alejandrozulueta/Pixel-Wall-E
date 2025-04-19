@@ -26,6 +26,7 @@ public enum BinaryTypes
     Mult,
     Div,
     Pow,
+    Modul,
     And,
     Or,
     Equal,

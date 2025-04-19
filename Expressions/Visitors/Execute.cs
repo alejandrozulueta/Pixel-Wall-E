@@ -18,13 +18,14 @@ public class Execute(
         where T : notnull =>
         opType switch
         {
-            BinaryTypes.Sum => (T)((dynamic)operand1 + (dynamic)operand2),
-            BinaryTypes.Sub => (T)((dynamic)operand1 - (dynamic)operand2),
-            BinaryTypes.Mult => (T)((dynamic)operand1 * (dynamic)operand2),
-            BinaryTypes.Div => (T)((dynamic)operand1 / (dynamic)operand2),
-            BinaryTypes.And => (T)((dynamic)operand1 && (dynamic)operand2),
-            BinaryTypes.Or => (T)((dynamic)operand1 || (dynamic)operand2),
-            BinaryTypes.Pow => (T)Math.Pow((dynamic)operand1, (dynamic)operand2),
+            BinaryTypes.Sum => (dynamic)operand1 + (dynamic)operand2,
+            BinaryTypes.Sub => (dynamic)operand1 - (dynamic)operand2,
+            BinaryTypes.Mult => (dynamic)operand1 * (dynamic)operand2,
+            BinaryTypes.Div => (dynamic)operand1 / (dynamic)operand2,
+            BinaryTypes.And => (dynamic)operand1 & (dynamic)operand2,
+            BinaryTypes.Or => (dynamic)operand1 | (dynamic)operand2,
+            BinaryTypes.Pow => Math.Pow((dynamic)operand1, (dynamic)operand2),
+            BinaryTypes.Modul => (dynamic)operand1 % (dynamic)operand2,
             _ => throw new NotImplementedException(),
         };
 
@@ -33,12 +34,12 @@ public class Execute(
         where K : notnull =>
         opType switch
         {
-            BinaryTypes.Equal => (K)((dynamic)operand1 == (dynamic)operand2),
-            BinaryTypes.Inequal => (K)((dynamic)operand1 != (dynamic)operand2),
-            BinaryTypes.Less => (K)((dynamic)operand1 < (dynamic)operand2),
-            BinaryTypes.Greater => (K)((dynamic)operand1 > (dynamic)operand2),
-            BinaryTypes.LessEqual => (K)((dynamic)operand1 <= (dynamic)operand2),
-            BinaryTypes.GreaterEqual => (K)((dynamic)operand1 >= (dynamic)operand2),
+            BinaryTypes.Equal => (dynamic)operand1 == (dynamic)operand2,
+            BinaryTypes.Inequal => (dynamic)operand1 != (dynamic)operand2,
+            BinaryTypes.Less => (dynamic)operand1 < (dynamic)operand2,
+            BinaryTypes.Greater => (dynamic)operand1 > (dynamic)operand2,
+            BinaryTypes.LessEqual => (dynamic)operand1 <= (dynamic)operand2,
+            BinaryTypes.GreaterEqual => (dynamic)operand1 >= (dynamic)operand2,
             _ => throw new NotFiniteNumberException(),
         };
 
@@ -47,7 +48,8 @@ public class Execute(
     {
         return opType switch
         {
-            UnaryTypes.Not => (T)!(dynamic)operand,
+            UnaryTypes.Not => !(dynamic)operand,
+            UnaryTypes.Neg => -(dynamic)operand,
             _ => throw new NotImplementedException(),
         };
     }

@@ -13,7 +13,7 @@ public static class Lexer
                 + @"|\d+"
                 + @"|(==|>=|<=)"
                 + @"|("".*"")"
-                + @"|([\[\]\(\)\+\-\*/^=><])|\s+"
+                + @"|([\[\]\(\)\+\-\*/%^=><])|\s+"
         );
 
         var split = input.Split("\n", StringSplitOptions.RemoveEmptyEntries);
@@ -45,7 +45,7 @@ public static class Lexer
     {
         var tokenType = lex switch
         {
-            "+" or "-" or "*" or "/" => TokenType.BinaryOperator,
+            "+" or "-" or "*" or "/" or "%" => TokenType.BinaryOperator,
             "==" or ">=" or "<=" or "!=" => TokenType.BinaryOperator,
             ">" or "<" => TokenType.BinaryOperator,
             "=" => TokenType.AssingOperator,
