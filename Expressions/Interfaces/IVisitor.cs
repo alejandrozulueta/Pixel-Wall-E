@@ -4,22 +4,15 @@ namespace Expressions.Interfaces;
 
 public interface IExpressionsVisitor
 {
-    void Visit(IExpression node);
-    void BlockVisit(IExpression[] expressions);
-    T UnaryVisit<T>(T operand, UnaryTypes opType)
-        where T : notnull;
-    T BinaryVisit<T>(T operand1, T operand2, BinaryTypes opType)
-        where T : notnull;
-    K BinaryVisit<T, K>(T operand1, T operand2, BinaryTypes type)
-        where T : notnull
-        where K : notnull;
-    T ValueVisit<T>(T value)
-        where T : notnull;
-    void AssingVisit<T>(string name, T value)
-        where T : notnull;
-    T VariableVisit<T>(string name)
-        where T : notnull;
-    void ActionVisit(Action<dynamic[]> action, dynamic[] value);
-    T FuncVisit<T>(Func<dynamic[], T> func, dynamic[] value)
-        where T : notnull;
+    void Visit(IInstruction node);
+    void BlockVisit(IInstruction[] expressions);
+    Values UnaryVisit(Values operand, UnaryTypes opType);
+    Values BinaryVisit(Values operand1, Values operand2, BinaryTypes opType);
+    Values ValueVisit(Values value);
+    void AssingVisit(string name, Values value);
+    Values VariableVisit(string name);
+    void ActionVisit(string action, Values[] value);
+    Values FuncVisit(string func, Values[] value);
+    void LabelVisit(string label, int index);
+    void GotoVisit(string label, Values cond);
 }

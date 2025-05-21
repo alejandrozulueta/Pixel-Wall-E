@@ -3,71 +3,92 @@ using Expressions.Models;
 
 namespace Expressions.Visitors;
 
-public class Execute(
-    Dictionary<string, dynamic>? variables = null,
-    Dictionary<string, Action<dynamic[]>>? actions = null,
-    Dictionary<string, Func<dynamic, dynamic[]>>? functions = null,
-    Dictionary<string, int>? labels = null
-) : IExpressionsVisitor, IContext
+public class Execute(Context Context) : IExpressionsVisitor
 {
-    public Context Context { get; set; } = new Context(labels, variables, actions, functions);
+    private bool gotoFlag;
+    private string? targetLabel;
 
-    public void Visit(IExpression node) => node.Accept(this);
+    public void Visit(IInstruction node) => node.Accept(this);
 
-    public T BinaryVisit<T>(T operand1, T operand2, BinaryTypes opType)
-        where T : notnull =>
+    public Values BinaryVisit(Values operand1, Values operand2, BinaryTypes opType) =>
         opType switch
         {
-            BinaryTypes.Sum => (dynamic)operand1 + (dynamic)operand2,
-            BinaryTypes.Sub => (dynamic)operand1 - (dynamic)operand2,
-            BinaryTypes.Mult => (dynamic)operand1 * (dynamic)operand2,
-            BinaryTypes.Div => (dynamic)operand1 / (dynamic)operand2,
-            BinaryTypes.And => (dynamic)operand1 & (dynamic)operand2,
-            BinaryTypes.Or => (dynamic)operand1 | (dynamic)operand2,
-            BinaryTypes.Pow => Math.Pow((dynamic)operand1, (dynamic)operand2),
-            BinaryTypes.Modul => (dynamic)operand1 % (dynamic)operand2,
+            BinaryTypes.Sum => operand1 + operand2,
+            BinaryTypes.Sub => operand1 - operand2,
+            BinaryTypes.Mult => operand1 * operand2,
+            BinaryTypes.Div => operand1 / operand2,
+            BinaryTypes.Modul => operand1 % operand2,
+            BinaryTypes.And => operand1 & operand2,
+            BinaryTypes.Or => operand1 | operand2,
+            BinaryTypes.Pow => operand1 ^ operand2,
+            BinaryTypes.Equal => operand1 == operand2,
+            BinaryTypes.Inequal => operand1 != operand2,
+            BinaryTypes.Less => operand1 < operand2,
+            BinaryTypes.Greater => operand1 > operand2,
+            BinaryTypes.LessEqual => operand1 <= operand2,
+            BinaryTypes.GreaterEqual => operand1 >= operand2,
             _ => throw new NotImplementedException(),
         };
 
-    public K BinaryVisit<T, K>(T operand1, T operand2, BinaryTypes opType)
-        where T : notnull
-        where K : notnull =>
-        opType switch
-        {
-            BinaryTypes.Equal => (dynamic)operand1 == (dynamic)operand2,
-            BinaryTypes.Inequal => (dynamic)operand1 != (dynamic)operand2,
-            BinaryTypes.Less => (dynamic)operand1 < (dynamic)operand2,
-            BinaryTypes.Greater => (dynamic)operand1 > (dynamic)operand2,
-            BinaryTypes.LessEqual => (dynamic)operand1 <= (dynamic)operand2,
-            BinaryTypes.GreaterEqual => (dynamic)operand1 >= (dynamic)operand2,
-            _ => throw new NotFiniteNumberException(),
-        };
-
-    public T UnaryVisit<T>(T operand, UnaryTypes opType)
-        where T : notnull
+    public Values UnaryVisit(Values operand, UnaryTypes opType)
     {
         return opType switch
         {
-            UnaryTypes.Not => !(dynamic)operand,
-            UnaryTypes.Neg => -(dynamic)operand,
+            UnaryTypes.Not => !operand,
+            UnaryTypes.Neg => -operand,
             _ => throw new NotImplementedException(),
         };
     }
 
-    public T ValueVisit<T>(T value)
-        where T : notnull => value;
+    public Values ValueVisit(Values value) => value;
 
-    public void AssingVisit<T>(string name, T value)
-        where T : notnull => Context.Variables[name] = value;
+    public void AssingVisit(string name, Values value) =>
+        Context.CurrentScope!.Variables[name] = value;
 
-    public T VariableVisit<T>(string name)
-        where T : notnull => Context.Variables[name];
+    public Values VariableVisit(string name) =>
+        Context.CurrentScope!.TryGetVariable(name, out Values? value)
+            ? value!
+            : throw new Exception();
 
-    public void ActionVisit(Action<dynamic[]> action, dynamic[] value) => action(value);
+    public void ActionVisit(string action, Values[] value) => Context.GetAction(action)(value);
 
-    public T FuncVisit<T>(Func<dynamic[], T> func, dynamic[] value)
-        where T : notnull => func(value);
+    public Values FuncVisit(string func, Values[] value) => Context.GetFunction(func)(value);
 
-    public void BlockVisit(IExpression[] expressions) =>
-        Array.ForEach(expressions, x => x.Accept(this));
+    public void GotoVisit(string label, Values cond) =>
+        targetLabel = (gotoFlag = cond.Value ?? false) ? label : null;
+
+    public void LabelVisit(string label, int index) => Context.CurrentScope!.Labels[label] = index;
+
+    public void BlockVisit(IInstruction[] expressions)
+    {
+        Context.PushScope();
+        SearchLabel(expressions);
+        for (int i = 0; i < expressions.Length; i++)
+        {
+            expressions[i].Accept(this);
+            if (!gotoFlag)
+                continue;
+            if (!Context.CurrentScope!.Labels.TryGetValue(targetLabel!, out int temp))
+                break;
+            ResetGotoFlag(temp, out i);
+        }
+        Context.PopScope();
+    }
+
+    public void ResetGotoFlag(int gotoIndex, out int index)
+    {
+        index = gotoIndex;
+        gotoFlag = false;
+        targetLabel = null;
+    }
+
+    private void SearchLabel(IInstruction[] expressions)
+    {
+        foreach (var item in expressions)
+        {
+            if (item is not LabelExpression label)
+                continue;
+            label.Accept(this);
+        }
+    }
 }

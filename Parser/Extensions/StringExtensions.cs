@@ -1,3 +1,4 @@
+using Expressions.Interfaces;
 using Expressions.Models;
 using Parser.Models;
 
@@ -21,6 +22,8 @@ public static class StringExtensions
             ">" => BinaryTypes.Greater,
             ">=" => BinaryTypes.GreaterEqual,
             "<=" => BinaryTypes.LessEqual,
+            "&" => BinaryTypes.And,
+            "|" => BinaryTypes.Or,
             _ => throw new NotImplementedException(),
         };
     }
@@ -31,6 +34,22 @@ public static class StringExtensions
         {
             "!" => UnaryTypes.Not,
             "-" => UnaryTypes.Neg,
+            _ => throw new NotImplementedException(),
+        };
+    }
+
+    public static bool IsAction(this string identifier)
+    {
+        return identifier switch
+        {
+            _ => throw new NotImplementedException(),
+        };
+    }
+
+    public static Action<Values[]> ToAction(this string identifier)
+    {
+        return identifier switch
+        {
             _ => throw new NotImplementedException(),
         };
     }

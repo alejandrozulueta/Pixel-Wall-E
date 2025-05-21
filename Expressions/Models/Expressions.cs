@@ -2,14 +2,14 @@ using Expressions.Interfaces;
 
 namespace Expressions.Models;
 
-public abstract class Expression : IExpression
+public abstract class Expression : IInstruction, IExpression
 {
-    public abstract void Accept(IExpressionsVisitor visitor);
+    public abstract Values Accept(IExpressionsVisitor visitor);
+
+    void IInstruction.Accept(IExpressionsVisitor visitor) => Accept(visitor);
 }
 
-public abstract class Expression<T> : IExpression, IExpression<T>
+public abstract class Instruction : IInstruction
 {
-    public abstract T Accept(IExpressionsVisitor visitor);
-
-    void IExpression.Accept(IExpressionsVisitor visitor) => Accept(visitor);
+    public abstract void Accept(IExpressionsVisitor visitor);
 }

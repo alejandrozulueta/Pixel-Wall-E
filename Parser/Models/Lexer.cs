@@ -8,40 +8,44 @@ public static class Lexer
     public static Tokens[] Tokenizer(string input)
     {
         Regex regex = new(
-            @"((.+)?![a-zA-Z_][a-zA-Z0-9_]*:\s*)"
+            @"[a-zA-Z_][a-zA-Z0-9_]*[\t ]*\r\n"
                 + @"|([a-zA-Z_][a-zA-Z0-9_]*)"
-                + @"|\d+"
-                + @"|(==|>=|<=)"
-                + @"|("".*"")"
-                + @"|([\[\]\(\)\+\-\*/%^=><])|\s+"
+                + @"|\d+(\.\d+)?"
+                + @"|""([^""]*)"""
+                + @"|(==|>=|<=|!=)"
+                + @"|([\[\]\(\)\+\-\*/%^=><\&\|,])"
+                + @"|[\t ]"
+                + @"|\r\n"
         );
-
-        var split = input.Split("\n", StringSplitOptions.RemoveEmptyEntries);
 
         List<Tokens> tokens = [];
 
-        for (int i = 0; i < split.Length; i++)
+        int count = 0;
+        int column = 0;
+        int line = 0;
+        foreach (var match in regex.Matches(input).Cast<Match>())
         {
-            int count = 0;
-
-            foreach (var match in regex.Matches(split[i]).Cast<Match>())
+            var lex = match.Value;
+            if (input[count] != lex[0])
+                throw new InvalidExpressionException();
+            column += match.Length;
+            count += match.Length;
+            TokenType tokenType = GetTokenType(ref lex);
+            if (!string.IsNullOrEmpty(lex.Trim()) || tokenType is TokenType.EndOfLine)
+                tokens.Add(new Tokens(tokenType, lex, line, column));
+            if (tokenType is TokenType.EndOfLine or TokenType.Label)
             {
-                if (split[i][count] != match.Value[0])
-                    throw new InvalidExpressionException();
-                count += match.Length;
-                if (string.IsNullOrEmpty(match.Value.Trim()))
-                    continue;
-                var tokenType = GetTokenType(match.Value);
-
-                tokens.Add(new Tokens(tokenType, match.Value, i, count));
+                column = 0;
+                line++;
             }
         }
-
-        tokens.Add(new Tokens(TokenType.EOS, "$", split.Length, 0));
+        if (tokens[^1].Type != TokenType.EndOfLine)
+            tokens.Add(new Tokens(TokenType.EndOfLine, "$", line, column));
+        tokens.Add(new Tokens(TokenType.EOS, "$", line + 1, 0));
         return [.. tokens];
     }
 
-    private static TokenType GetTokenType(string lex)
+    private static TokenType GetTokenType(ref string lex)
     {
         var tokenType = lex switch
         {
@@ -52,20 +56,31 @@ public static class Lexer
             "!" or "-" => TokenType.UnaryOperator,
             "(" => TokenType.OpenParenthesis,
             ")" => TokenType.CloseParenthesis,
+            "[" => TokenType.OpenBracket,
+            "]" => TokenType.CloseBracket,
             "^" => TokenType.BinaryOperator,
+            "&" or "|" => TokenType.BinaryOperator,
+            "goto" => TokenType.Goto,
+            "\r\n" => TokenType.EndOfLine,
             _ => TokenType.Identifier,
         };
 
         if (tokenType != TokenType.Identifier)
             return tokenType;
-        if (int.TryParse(lex, out int _))
-            return TokenType.Value;
+        if (double.TryParse(lex, out double _))
+            return TokenType.Num;
         if (bool.TryParse(lex, out bool _))
-            return TokenType.Value;
+            return TokenType.Bool;
         if (lex[0] == '"')
-            return TokenType.Value;
-        if (lex[^1] == ':')
+        {
+            lex = lex[1..^1];
+            return TokenType.String;
+        }
+        if (lex[^1] == '\n')
+        {
+            lex = lex[..^2].Trim();
             return TokenType.Label;
+        }
         return tokenType;
     }
 }

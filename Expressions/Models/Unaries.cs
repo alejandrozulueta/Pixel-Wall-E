@@ -2,15 +2,8 @@ using Expressions.Interfaces;
 
 namespace Expressions.Models;
 
-public class UnaryExpression<T>(IExpression<T> expression, UnaryTypes type) : Expression<T>
-    where T : notnull
+public class UnaryExpression(IExpression expression, UnaryTypes type) : Expression
 {
-    public override T Accept(IExpressionsVisitor visitor) =>
+    public override Values Accept(IExpressionsVisitor visitor) =>
         visitor.UnaryVisit(expression.Accept(visitor), type);
-}
-
-public enum UnaryTypes
-{
-    Not,
-    Neg,
 }

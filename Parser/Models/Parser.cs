@@ -9,11 +9,11 @@ public class Parser
 {
     private int tokenIndex;
 
-    private delegate bool GetDelegateExpressions<T>(Tokens[] tokens, out IExpression<T>? exp);
-    private delegate bool GetDelegateExpression<T>(
+    private delegate bool GetDelegateExpressions(Tokens[] tokens, out IExpression? exp);
+    private delegate bool GetDelegateExpression(
         Tokens[] tokens,
-        IExpression<T> left,
-        out IExpression<T>? exp
+        IExpression left,
+        out IExpression? exp
     );
 
     public static readonly Dictionary<string, OpFunc> OpFuncs = new()
@@ -35,7 +35,7 @@ public class Parser
         { "<=", OpFunc.Reduce },
     };
 
-    public IExpression Parse(Tokens[] tokens)
+    public IInstruction Parse(Tokens[] tokens)
     {
         tokenIndex = 0;
         var node = GetBlockExpression(tokens);
@@ -44,155 +44,244 @@ public class Parser
             : throw new InvalidProgramException();
     }
 
-    protected BlockExpression GetBlockExpression(Tokens[] tokens)
+    protected BlockInstruction GetBlockExpression(Tokens[] tokens)
     {
-        List<IExpression> lines = [];
+        List<IInstruction> lines = [];
         var change = true;
 
         while (change)
         {
-            if (change = GetAssingExpression(tokens, out IExpression? exp))
+            if (change = GetAssingInstruction(tokens, out IInstruction? exp))
                 lines.Add(exp!);
-            else if (change = GetActionExpression(tokens, out exp))
+            else if (change = GetCallFunction(tokens, out exp))
                 lines.Add(exp!);
-            else if (change = GetFuncExpression(tokens, out exp))
+            else if (change = GetLabelExpression(tokens, lines.Count, out exp))
                 lines.Add(exp!);
-            // else if (GetLabelExpression(tokens, out exp))
-            //     lines.Add(exp);
-            // else if (GetGotoExpression(tokens, out exp))
-            //     lines.Add(exp);
+            else if (change = GetGotoExpression(tokens, out exp))
+                lines.Add(exp!);
+            change = change || GetEmptyLine(tokens);
         }
-        return new BlockExpression([.. lines]);
+        return new BlockInstruction([.. lines]);
+    }
+
+    private bool GetEmptyLine(Tokens[] tokens)
+    {
+        Tokens token;
+        do token = tokens[tokenIndex++];
+        while (token.Type != TokenType.EndOfLine && token.Type != TokenType.EOS);
+        var result = token.Type == TokenType.EndOfLine;
+        if (!result)
+            tokenIndex--;
+        return result;
+    }
+
+    private bool GetLabelExpression(Tokens[] tokens, int index, out IInstruction? exp)
+    {
+        var name = tokens[tokenIndex].Identifier;
+        var startIndex = tokenIndex;
+        if (tokens[tokenIndex++].Type != TokenType.Label)
+            return ResetDefault(startIndex, out exp);
+        var node = new LabelExpression(name, index);
+        return GetDefault(node, out exp);
+    }
+
+    private bool GetGotoExpression(Tokens[] tokens, out IInstruction? exp)
+    {
+        var startIndex = tokenIndex;
+        if (tokens[tokenIndex++].Type != TokenType.Goto)
+            return ResetDefault(startIndex, out exp);
+        if (tokens[tokenIndex++].Type != TokenType.OpenBracket)
+            return ResetDefault(startIndex, out exp);
+        var labelName = tokens[tokenIndex].Identifier;
+        if (tokens[tokenIndex++].Type != TokenType.Identifier)
+            return ResetDefault(startIndex, out exp);
+        if (tokens[tokenIndex++].Type != TokenType.CloseBracket)
+            return ResetDefault(startIndex, out exp);
+        if (tokens[tokenIndex++].Type != TokenType.OpenParenthesis)
+            return ResetDefault(startIndex, out exp);
+        if (!GetBooleanExpression(tokens, out IExpression? @bool))
+            return ResetDefault(startIndex, out exp);
+        if (tokens[tokenIndex++].Type != TokenType.CloseParenthesis)
+            return ResetDefault(startIndex, out exp);
+        if (tokens[tokenIndex++].Type != TokenType.EndOfLine)
+            return ResetDefault(startIndex, out exp);
+        var node = new GotoExpression(labelName, @bool!);
+        return GetDefault(node, out exp);
     }
 
     #region Lines Expressions
 
-    private bool GetAssingExpression(Tokens[] tokens, out IExpression? exp)
+    private bool GetAssingInstruction(Tokens[] tokens, out IInstruction? exp)
     {
         int startIndex = tokenIndex;
         if (tokens[tokenIndex++].Type != TokenType.Identifier)
             return ResetDefault(startIndex, out exp);
         if (tokens[tokenIndex++].Type != TokenType.AssingOperator)
             return ResetDefault(startIndex, out exp);
-        if (GetBooleanExpression(tokens, out IExpression<bool>? @bool))
-            return AssingDefault(tokens[startIndex].Identifier, @bool, out exp);
-        if (GetNumericExpression(tokens, out IExpression<int>? num))
-            return AssingDefault(tokens[startIndex].Identifier, num, out exp);
-        if (GetStringExpression(tokens, out IExpression<string>? value))
-            return AssingDefault(tokens[startIndex].Identifier, value, out exp);
-        return ResetDefault(startIndex, out exp);
+        if (
+            !GetExpressionType(
+                tokens,
+                out IExpression? value,
+                GetBooleanExpression,
+                GetStringExpression,
+                GetNumericExpression
+            )
+        )
+            return ResetDefault(startIndex, out exp);
+        return AssingDefault(tokens[startIndex].Identifier, value, out exp);
     }
 
-    private bool GetActionExpression(Tokens[] tokens, out IExpression? exp)
+    private bool GetCallFunction(Tokens[] tokens, out IInstruction? exp)
     {
-        return ResetDefault(tokenIndex, out exp);
+        int startIndex = tokenIndex;
+        if (!CheckFunction(tokens, out IExpression[]? expressions))
+            return ResetDefault(startIndex, out exp);
+        if (tokens[tokenIndex++].Type != TokenType.EndOfLine)
+            return ResetDefault(startIndex, out exp);
+        return ActionDefault(tokens[startIndex].Identifier, expressions!, out exp);
     }
 
-    private bool GetFuncExpression(Tokens[] tokens, out IExpression? exp)
+    private bool GetCallFunction(Tokens[] tokens, out IExpression? exp)
     {
-        return ResetDefault(tokenIndex, out exp);
+        int startIndex = tokenIndex;
+        if (!CheckFunction(tokens, out IExpression[]? expressions))
+            return ResetDefault(startIndex, out exp);
+        return FunctDefault(tokens[tokenIndex++].Identifier, expressions!, out exp);
+    }
+
+    private bool CheckFunction(Tokens[] tokens, out IExpression[]? expressions)
+    {
+        int startIndex = tokenIndex;
+        List<IExpression> @params = [];
+        if (tokens[tokenIndex++].Type != TokenType.Identifier)
+            return ResetDefault(startIndex, out expressions);
+        if (tokens[tokenIndex++].Type != TokenType.OpenParenthesis)
+            return ResetDefault(startIndex, out expressions);
+
+        do
+        {
+            if (!GetExpressionType(tokens, out IExpression? value))
+                return ResetDefault(startIndex, out expressions);
+            @params.Add(value!);
+        } while (tokens[tokenIndex++].Identifier != ",");
+
+        if (tokens[tokenIndex - 1].Identifier != ")")
+            return ResetDefault(startIndex, out expressions);
+        return GetDefault([.. @params], out expressions);
     }
 
     #endregion
 
-    #region Value Expressions
+    #region Values Expressions
 
-    private bool GetNumericExpression(Tokens[] tokens, out IExpression<int>? num) =>
-        GetBinaryNumericExpression(tokens, out num);
-
-    private bool GetBooleanExpression(Tokens[] tokens, out IExpression<bool>? @bool) =>
-        GetBinaryBooleanExpression(tokens, out @bool);
-
-    private bool GetStringExpression(Tokens[] tokens, out IExpression<string>? value)
+    private bool GetExpressionType(
+        Tokens[] tokens,
+        out IExpression? exp,
+        params GetDelegateExpressions[] getDelegates
+    )
     {
-        throw new NotImplementedException();
+        var startIndex = tokenIndex;
+        foreach (var getDelegate in getDelegates)
+        {
+            if (!getDelegate(tokens, out exp))
+                continue;
+            if (tokens[tokenIndex++].Type == TokenType.EndOfLine)
+                return true;
+            tokenIndex = startIndex;
+        }
+        return ResetDefault(startIndex, out exp);
     }
+
+    private bool GetNumericExpression(Tokens[] tokens, out IExpression? num) =>
+        GetAddExpressions(tokens, out num);
+
+    private bool GetBooleanExpression(Tokens[] tokens, out IExpression? @bool) =>
+        GetOrExpressions(tokens, out @bool);
+
+    private bool GetStringExpression(Tokens[] tokens, out IExpression? value) =>
+        GetSumStringExpression(tokens, out value);
 
     #endregion
 
     #region NumericExpressions
 
-    private bool GetBinaryNumericExpression(Tokens[] tokens, out IExpression<int>? binaryExp) =>
-        GetAddExpressions(tokens, out binaryExp);
+    private bool GetAddExpressions(Tokens[] tokens, out IExpression? addExp) =>
+        GetExpression(tokens, out addExp, GetMultExpressions, "+", "-");
 
-    private bool GetAddExpressions(Tokens[] tokens, out IExpression<int>? binaryExp) =>
-        GetExpressions(tokens, out binaryExp, GetMultExpressions, "+", "-");
+    private bool GetMultExpressions(Tokens[] tokens, out IExpression? multExp) =>
+        GetExpression(tokens, out multExp, GetPowExpressions, "*", "/", "%");
 
-    private bool GetMultExpressions(Tokens[] tokens, out IExpression<int>? multExp) =>
-        GetExpressions(tokens, out multExp, GetPowExpressions, "*", "/", "%");
+    private bool GetPowExpressions(Tokens[] tokens, out IExpression? powExp) =>
+        GetExpression(tokens, out powExp, GetLUNExpression, "^");
 
-    private bool GetPowExpressions(Tokens[] tokens, out IExpression<int>? powExp) =>
-        GetExpressions(tokens, out powExp, GetLUNExpression, "^");
-
-    private bool GetLUNExpression(Tokens[] tokens, out IExpression<int>? exp) =>
+    private bool GetLUNExpression(Tokens[] tokens, out IExpression? exp) =>
         GetLUExpression(tokens, out exp, GetTNExpression, "-");
 
-    private bool GetTNExpression(Tokens[] tokens, out IExpression<int>? exp) =>
-        GetTermExpression(tokens, out exp, GetNumericExpression);
+    private bool GetTNExpression(Tokens[] tokens, out IExpression? exp) =>
+        GetTermExpression<double>(tokens, TokenType.Num, out exp, GetNumericExpression);
 
     #endregion
 
     #region BooleanExpression
 
-    private bool GetBinaryBooleanExpression(Tokens[] tokens, out IExpression<bool>? binaryExp) =>
-        GetOrExpressions(tokens, out binaryExp);
+    private bool GetOrExpressions(Tokens[] tokens, out IExpression? binaryExp) =>
+        GetExpression(tokens, out binaryExp, GetAndExpressions, "|");
 
-    private bool GetOrExpressions(Tokens[] tokens, out IExpression<bool>? binaryExp) =>
-        GetExpressions(tokens, out binaryExp, GetAndExpressions, "|");
+    private bool GetAndExpressions(Tokens[] tokens, out IExpression? exp) =>
+        GetExpression(tokens, out exp, GetComparerExpression, "&");
 
-    private bool GetAndExpressions(Tokens[] tokens, out IExpression<bool>? exp) =>
-        GetExpressions(tokens, out exp, GetNotExpressions, "&");
+    private bool GetComparerExpression(Tokens[] tokens, out IExpression? binaryExp) =>
+        GetExpression(tokens, out binaryExp, GetComparerType, "==", "!=", "<=", ">=", ">", "<");
 
-    private bool GetNotExpressions(Tokens[] tokens, out IExpression<bool>? exp) =>
+    private bool GetComparerType(Tokens[] tokens, out IExpression? exp) =>
+        GetStringExpression(tokens, out exp)
+        || GetNotExpressions(tokens, out exp)
+        || GetNumericExpression(tokens, out exp);
+
+    private bool GetNotExpressions(Tokens[] tokens, out IExpression? exp) =>
         GetLUExpression(tokens, out exp, GetTBExpression, "!");
 
-    private bool GetTBExpression(Tokens[] tokens, out IExpression<bool>? exp) =>
-        GetTermExpression(tokens, out exp, GetBinaryBooleanExpression)
-        || GetComparerExpression(tokens, out exp);
+    private bool GetTBExpression(Tokens[] tokens, out IExpression? exp) =>
+        GetTermExpression<bool>(tokens, TokenType.Bool, out exp, GetBooleanExpression);
 
-    private bool GetComparerExpression(Tokens[] tokens, out IExpression<bool>? binaryExp) =>
-        GetExpressions(
-            tokens,
-            out binaryExp,
-            GetBinaryBooleanExpression,
-            "==",
-            "!=",
-            "<=",
-            ">=",
-            ">",
-            "<"
-        );
+    #endregion
+
+    #region StringExpression
+
+    private bool GetSumStringExpression(Tokens[] tokens, out IExpression? exp) =>
+        GetExpression(tokens, out exp, GetTSExpression, "+");
+
+    private bool GetTSExpression(Tokens[] tokens, out IExpression? exp) =>
+        GetTermExpression<string>(tokens, TokenType.String, out exp, GetStringExpression);
 
     #endregion
 
     #region Default Methods
 
-    private bool GetExpressions<T>(
+    private bool GetExpression(
         Tokens[] tokens,
-        out IExpression<T>? binaryExp,
-        GetDelegateExpressions<T> getExpressions,
+        out IExpression? binaryExp,
+        GetDelegateExpressions getExpressions,
         params string[] @params
     )
-        where T : notnull
     {
         var startIndex = tokenIndex;
-        if (!getExpressions.Invoke(tokens, out IExpression<T>? left))
+        if (!getExpressions.Invoke(tokens, out IExpression? left))
             return ResetDefault(startIndex, out binaryExp);
-        if (GetExpression(tokens, left!, out IExpression<T>? result, getExpressions, @params))
+        if (ConstructExpression(tokens, left!, out IExpression? result, getExpressions, @params))
             return GetDefault(result!, out binaryExp);
-        if (left is IExpression<T> value)
+        if (left is IExpression value)
             return GetDefault(value, out binaryExp);
         return ResetDefault(startIndex, out binaryExp);
     }
 
-    private bool GetExpression<T>(
+    private bool ConstructExpression(
         Tokens[] tokens,
-        IExpression<T> left,
-        out IExpression<T>? exp,
-        GetDelegateExpressions<T> getSubExp,
+        IExpression left,
+        out IExpression? exp,
+        GetDelegateExpressions getSubExp,
         params string[] @params
     )
-        where T : notnull
     {
         var startIndex = tokenIndex;
         if (!MatchToken(tokens, @params, out string? op))
@@ -206,84 +295,79 @@ public class Parser
         };
     }
 
-    private bool ShiftExpression<T>(
+    private bool ShiftExpression(
         Tokens[] tokens,
-        IExpression<T> left,
-        out IExpression<T>? exp,
-        GetDelegateExpressions<T> getSubExpressions,
+        IExpression left,
+        out IExpression? exp,
+        GetDelegateExpressions getSubExpressions,
         string op,
         params string[] @params
     )
-        where T : notnull
     {
-        if (!GetExpressions(tokens, out IExpression<T>? right, getSubExpressions, @params))
+        if (!GetExpression(tokens, out IExpression? right, getSubExpressions, @params))
             return ResetDefault(tokenIndex, out exp);
-        var node = new BinaryExpression<T>(left, right!, op.GetBinaryType());
+        var node = new BinaryExpression(left, right!, op.GetBinaryType());
         return GetDefault(node, out exp);
     }
 
-    private bool ReduceExpression<T>(
+    private bool ReduceExpression(
         Tokens[] tokens,
-        IExpression<T> left,
-        out IExpression<T>? exp,
-        GetDelegateExpressions<T> getSubExpressions,
+        IExpression left,
+        out IExpression? exp,
+        GetDelegateExpressions getSubExpressions,
         string op,
         params string[] @params
     )
-        where T : notnull
     {
-        if (!getSubExpressions.Invoke(tokens, out IExpression<T>? right))
+        if (!getSubExpressions.Invoke(tokens, out IExpression? right))
             return ResetDefault(tokenIndex, out exp);
-        var node = new BinaryExpression<T>(left, right!, op.GetBinaryType());
-        if (!GetExpression(tokens, node, out exp, getSubExpressions, @params))
+        var node = new BinaryExpression(left, right!, op.GetBinaryType());
+        if (!ConstructExpression(tokens, node, out exp, getSubExpressions, @params))
             return GetDefault(node, out exp);
         return true;
     }
 
-    // private bool GetRUExpression<T>(
+    // private bool GetRUExpression(
     //     Tokens[] tokens,
-    //     out IExpression<T>? exp,
-    //     GetDelegateExpressions<T> getExpressions,
+    //     out IExpression? exp,
+    //     GetDelegateExpressions getExpressions,
     //     params string[] @params
     // )
-    //     where T : notnull, IParsable<T>
     // {
     //     var startIndex = tokenIndex;
-    //     if (!getExpressions(tokens, out IExpression<T>? value))
+    //     if (!getExpressions(tokens, out IExpression? value))
     //         return ResetDefault(startIndex, out exp);
     //     if (!GetRUExpressions(tokens, value!, out exp, @params))
     //         return GetDefault(value!, out exp);
     //     return true;
     // }
 
-    private bool GetLUExpression<T>(
+    private bool GetLUExpression(
         Tokens[] tokens,
-        out IExpression<T>? exp,
-        GetDelegateExpressions<T> getExpressions,
+        out IExpression? exp,
+        GetDelegateExpressions getExpressions,
         params string[] @params
     )
-        where T : notnull, IParsable<T>
     {
         var startIndex = tokenIndex;
-        if (getExpressions(tokens, out IExpression<T>? value))
+        if (getExpressions(tokens, out IExpression? value))
             return GetDefault(value!, out exp);
         if (!GetRUExpressions(tokens, value!, out exp, @params))
             return ResetDefault(startIndex, out exp);
         return true;
     }
 
-    private bool GetRUExpressions<T>(
+    private bool GetRUExpressions(
         Tokens[] tokens,
-        IExpression<T> num,
-        out IExpression<T>? exp,
+        IExpression num,
+        out IExpression? exp,
         params string[] @params
     )
-        where T : notnull
     {
         var startIndex = tokenIndex;
         if (!MatchToken(tokens, @params, out string? op))
             return ResetDefault(startIndex, out exp);
-        var node = new UnaryExpression<T>(num, op!.GetUnaryType());
+        var node = new UnaryExpression(num, op!.GetUnaryType());
         if (!GetRUExpressions(tokens, node, out exp))
             return GetDefault(node, out exp);
         return true;
@@ -291,17 +375,23 @@ public class Parser
 
     private bool GetTermExpression<T>(
         Tokens[] tokens,
-        out IExpression<T>? termExp,
-        GetDelegateExpressions<T> getExpressions
+        TokenType type,
+        out IExpression? termExp,
+        GetDelegateExpressions getExpressions
     )
-        where T : notnull, IParsable<T>
+        where T : IParsable<T>
     {
         var startIndex = tokenIndex;
         var token = tokens[tokenIndex++];
-        if (T.TryParse(token.Identifier, null, out T? num1))
-            return GetDefault(new ValueExpression<T>(num1), out termExp);
+        if (token.Type == type && T.TryParse(token.Identifier, null, out T? num1))
+            return GetDefault(
+                new ValueExpression(new Values(typeof(T).ToValueType(), num1)),
+                out termExp
+            );
+        if (GetCallFunction(tokens, out IExpression? function))
+            return GetDefault(function, out termExp);
         if (token.Type == TokenType.Identifier)
-            return GetDefault(new VariableExpression<T>(token.Identifier), out termExp);
+            return GetDefault(new VariableExpression(token.Identifier), out termExp);
         if (token.Type != TokenType.OpenParenthesis)
             return ResetDefault(startIndex, out termExp);
         if (!getExpressions(tokens, out termExp))
@@ -320,10 +410,21 @@ public class Parser
         return GetDefault(identifier, out op);
     }
 
-    private bool AssingDefault<T>(string name, IExpression<T>? value, out IExpression? exp)
-        where T : notnull
+    private bool AssingDefault(string name, IExpression? value, out IInstruction? exp)
     {
-        exp = new Assign<T>(name, value!);
+        exp = new Assign(name, value!);
+        return true;
+    }
+
+    private bool ActionDefault(string action, IExpression?[] values, out IInstruction? exp)
+    {
+        exp = new ActionInstruction(action, values!);
+        return true;
+    }
+
+    private bool FunctDefault(string name, IExpression?[] values, out IExpression? exp)
+    {
+        exp = new FuncExpresion(name, values!);
         return true;
     }
 

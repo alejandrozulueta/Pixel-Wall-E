@@ -1,11 +1,13 @@
+using Expressions.Models;
+
 namespace Expressions.Interfaces;
 
-public interface IExpression
+public interface IInstruction
 {
     void Accept(IExpressionsVisitor visitor);
 }
 
-public interface IExpression<T> : IExpression
+public interface IExpression : IInstruction
 {
-    new T Accept(IExpressionsVisitor visitor);
+    new Values Accept(IExpressionsVisitor visitor);
 }

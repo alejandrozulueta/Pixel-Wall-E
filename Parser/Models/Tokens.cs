@@ -4,13 +4,19 @@ public enum TokenType
 {
     Identifier,
     Label,
-    Value,
+    Num,
+    Bool,
+    String,
     BinaryOperator,
     UnaryOperator,
     AssingOperator,
     OpenParenthesis,
     CloseParenthesis,
     EOS,
+    Goto,
+    OpenBracket,
+    CloseBracket,
+    EndOfLine,
 }
 
 public class Tokens(TokenType type, string identifier, int row, int col)

@@ -1,0 +1,14 @@
+count = 5
+sum = 0
+
+sum
+count = count - 1
+goto[sum](count != 1)
+
+a
+
+sum = sum + count + 5 
+
+goto[a](sum == 6)
+
+b = (count == 12)
