@@ -1,0 +1,50 @@
+﻿using Expressions.Models;
+using Expressions.Visitors;
+using Parser.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Wall_E.Extensions;
+
+namespace Wall_E.Controllers
+{
+    public class MainController
+    {
+        public FuncControler FuncControler { get; }
+        public ActionControler ActionControler { get; }
+        
+        public MainController(FuncControler funcControler, ActionControler actionControler)
+        {
+            FuncControler = funcControler;
+            ActionControler = actionControler;
+        }
+
+        public void ExecuteCode(string code)
+        {
+            var funcs = FuncControler.GetFuncs();
+            var acts = ActionControler.GetActs();
+
+            var context = new Context(acts, funcs);
+            var analyzer = new SemanticAnalyzer(context);
+            var visit = new Execute(context);
+
+            var tokens = Lexer.Tokenizer(code);
+                
+            var parser = new Parser.Models.Parser();
+
+            
+            var node = parser.Parse(tokens);
+
+            node.Accept(analyzer);
+            if(!analyzer.GetExceptions(out List<Exception>? exceptions)) 
+            { 
+                // Agregar Exc
+                return;
+            }
+
+            node.Accept(visit);
+        }
+    }
+}

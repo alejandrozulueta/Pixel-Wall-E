@@ -1,8 +1,10 @@
-﻿using Expressions.Visitors;
+﻿using Expressions.Models;
+using Expressions.Visitors;
 using Parser.Models;
 
 var parser = new Parser.Models.Parser();
-var visit = new Execute();
+var context = new Context([], []);
+var visit = new Execute(context);
 
 // var path = Environment.CurrentDirectory;
 var path = @"D:\";

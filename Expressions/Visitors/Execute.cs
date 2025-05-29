@@ -68,7 +68,7 @@ public class Execute(Context Context) : IExpressionsVisitor
             expressions[i].Accept(this);
             if (!gotoFlag)
                 continue;
-            if (!Context.CurrentScope!.Labels.TryGetValue(targetLabel!, out int temp))
+            if (!Context.CurrentScope!.TryGetLabel(targetLabel!, out int temp))
                 break;
             ResetGotoFlag(temp, out i);
         }

@@ -54,7 +54,7 @@
             this.splitContainer1.Size = new System.Drawing.Size(800, 450);
             this.splitContainer1.SplitterDistance = 389;
             this.splitContainer1.TabIndex = 0;
-            this.splitContainer1.SplitterMoved += new System.Windows.Forms.SplitterEventHandler(this.splitContainer1_SplitterMoved);
+            this.splitContainer1.SplitterMoved += new System.Windows.Forms.SplitterEventHandler(this.SplitContainer1_SplitterMoved);
             // 
             // canvasPictureBox
             // 
@@ -64,7 +64,7 @@
             this.canvasPictureBox.Size = new System.Drawing.Size(389, 450);
             this.canvasPictureBox.TabIndex = 0;
             this.canvasPictureBox.TabStop = false;
-            this.canvasPictureBox.Paint += new System.Windows.Forms.PaintEventHandler(this.canvasPictureBox_Paint);
+            this.canvasPictureBox.Paint += new System.Windows.Forms.PaintEventHandler(this.CanvasPictureBox_Paint);
             // 
             // codeEditor
             // 
@@ -75,8 +75,8 @@
             this.codeEditor.TabIndex = 0;
             this.codeEditor.Text = "";
             this.codeEditor.WordWrap = false;
-            this.codeEditor.TextChanged += new System.EventHandler(this.richTextBox1_TextChanged);
-            this.codeEditor.KeyDown += new System.Windows.Forms.KeyEventHandler(this.codeEditor_KeyDown);
+            this.codeEditor.TextChanged += new System.EventHandler(this.RichTextBox1_TextChanged);
+            this.codeEditor.KeyDown += new System.Windows.Forms.KeyEventHandler(this.CodeEditor_KeyDown);
             // 
             // Form1
             // 
