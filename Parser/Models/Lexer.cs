@@ -9,13 +9,14 @@ public static class Lexer
     {
         Regex regex = new(
             @"[a-zA-Z_][a-zA-Z0-9_]*[\t ]*\r\n"
+                + @"|[a-zA-Z_][a-zA-Z0-9_]*[\t ]*\n"
                 + @"|([a-zA-Z_][a-zA-Z0-9_]*)"
                 + @"|\d+(\.\d+)?"
                 + @"|""([^""]*)"""
                 + @"|(==|>=|<=|!=)"
                 + @"|([\[\]\(\)\+\-\*/%^=><\&\|,])"
                 + @"|[\t ]"
-                + @"|\r\n"
+                + @"|\r\n|\n"
         );
 
         List<Tokens> tokens = [];
@@ -61,7 +62,7 @@ public static class Lexer
             "^" => TokenType.BinaryOperator,
             "&" or "|" => TokenType.BinaryOperator,
             "goto" => TokenType.Goto,
-            "\r\n" => TokenType.EndOfLine,
+            "\r\n" or "\n" => TokenType.EndOfLine,
             _ => TokenType.Identifier,
         };
 
@@ -78,7 +79,7 @@ public static class Lexer
         }
         if (lex[^1] == '\n')
         {
-            lex = lex[..^2].Trim();
+            lex = lex.Trim();
             return TokenType.Label;
         }
         return tokenType;

@@ -6,9 +6,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Wall_E.Extensions;
 
-namespace Wall_E.Controllers
+namespace Visual.Controllers
 {
     public class MainController
     {

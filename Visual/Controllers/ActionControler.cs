@@ -1,21 +1,17 @@
-﻿using Expressions.Extensions;
-using Expressions.Models;
-using System.Collections.Generic;
-using System.Reflection;
-using Visual.Models;
-using Wall_E.Attributes;
-using Wall_E.Extensions;
-using Wall_E.Models;
-using Brush = Wall_E.Models.Brush;
+﻿using System.Reflection;
+using Visual.Attributes;
+using Visual.Extensions;
+using Visual.Data;
 
-namespace Wall_E.Controllers
+namespace Visual.Controllers
 {
     public class ActionControler
     {
-        private Canvas canvas;
-        private Brush? brush;
+        private CanvasData canvas;
+        private BrushData? brush;
+        private Dictionary<string, Action<Values[]>>? dict;
 
-        public ActionControler(Canvas canvas)
+        public ActionControler(CanvasData canvas)
         {
             this.canvas = canvas;
         }
@@ -24,7 +20,7 @@ namespace Wall_E.Controllers
         public void Spawn(int x, int y)
         {
             if(brush is null)
-                brush = new Wall_E.Models.Brush(x, y);
+                brush = new BrushData(x, y);
             throw new InvalidOperationException("Wall_E ya se ha iniciado");
         }
 
@@ -50,7 +46,7 @@ namespace Wall_E.Controllers
                 int newX = brush!.CurrentX + dirX * i;
                 int newY = brush!.CurrentX + dirX * i;
 
-                canvas.canvasCells[newX, newY].Color = brush!.CurrentColor;
+                canvas.CellsColor[newX, newY] = brush!.CurrentColor;
             }
         }
 
@@ -74,7 +70,7 @@ namespace Wall_E.Controllers
 
         public Dictionary<string, Action<Values[]>> GetActs()
         {
-            return typeof(FuncControler).GetMethods()
+            dict = dict ?? typeof(FuncControler).GetMethods()
                 .Where(x => x.GetCustomAttribute<AttributeDefined>()?.Name == "VisualActs")
                 .Select(x =>
                 {
@@ -94,7 +90,7 @@ namespace Wall_E.Controllers
                 })
                 .ToDictionary(item => item.Key, item => item.Value);
 
-
+            return dict;
         }
 
     }

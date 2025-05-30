@@ -1,16 +1,15 @@
-﻿using Expressions.Extensions;
-using Expressions.Models;
-using System.Reflection;
-using Visual.Models;
-using Wall_E.Attributes;
+﻿using System.Reflection;
+using Visual.Attributes;
+using Visual.Data;
 
-namespace Wall_E.Controllers
+namespace Visual.Controllers
 {
     public class FuncControler
     {
-        private Canvas canvas;
+        private CanvasData canvas;
+        private Dictionary<string, Func<Values[], Values>>? dict;
 
-        public FuncControler(Canvas canvas) 
+        public FuncControler(CanvasData canvas) 
         { 
             this.canvas = canvas;    
         }
@@ -59,7 +58,7 @@ namespace Wall_E.Controllers
 
         public Dictionary<string, Func<Values[], Values>> GetFuncs()
         {
-            return typeof(FuncControler).GetMethods()
+            dict = dict ?? typeof(FuncControler).GetMethods()
                 .Where(x => x.GetCustomAttribute<AttributeDefined>()?.Name == "VisualFuncs")
                 .Select(x =>
                 {
@@ -81,6 +80,8 @@ namespace Wall_E.Controllers
 
                 })
                 .ToDictionary(item => item.Key, item => item.Value);
+
+            return dict;
         }
     }
 }

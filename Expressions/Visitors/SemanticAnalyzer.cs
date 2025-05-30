@@ -107,7 +107,7 @@ namespace Expressions.Visitors
         public Values ValueVisit(Values value) => value;
 
         public void AssingVisit(string name, Values value) =>
-            Context.CurrentScope!.Variables[name] = value;
+             Context.CurrentScope!.Variables[name] = value;
 
         public Values VariableVisit(string name)
         {

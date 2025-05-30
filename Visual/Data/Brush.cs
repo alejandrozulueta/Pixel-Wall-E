@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Wall_E.Models
+namespace Visual.Data
 {
-    public class Brush(int x, int y)
+    public class BrushData(int x, int y)
     {
         public Color CurrentColor { get; set; } = Color.Transparent;
         public int CurrentX { get; set; } = x;

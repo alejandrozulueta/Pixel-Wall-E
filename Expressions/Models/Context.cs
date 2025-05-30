@@ -35,6 +35,6 @@ public class Context(
 
     public void PushScope()
     {
-        CurrentScope = new Scope(null, null, CurrentScope);
+        CurrentScope = new Scope([], [], CurrentScope);
     }
 }
