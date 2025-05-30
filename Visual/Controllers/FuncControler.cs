@@ -4,15 +4,11 @@ using Visual.Data;
 
 namespace Visual.Controllers
 {
-    public class FuncControler
+    public class FuncControler(CanvasData canvas, BrushData? brush)
     {
-        private CanvasData canvas;
-        private Dictionary<string, Func<Values[], Values>>? dict;
-
-        public FuncControler(CanvasData canvas) 
-        { 
-            this.canvas = canvas;    
-        }
+        private CanvasData canvas = canvas;
+        private BrushData? brush = brush;
+        private static Dictionary<string, FuncInfo>? dict;
 
         [AttributeDefined("VisualFuncs")]
         public int GetActualX()
@@ -56,7 +52,7 @@ namespace Visual.Controllers
             throw new NotImplementedException();
         }
 
-        public Dictionary<string, Func<Values[], Values>> GetFuncs()
+        public Dictionary<string, FuncInfo> GetFuncs()
         {
             dict = dict ?? typeof(FuncControler).GetMethods()
                 .Where(x => x.GetCustomAttribute<AttributeDefined>()?.Name == "VisualFuncs")
@@ -76,7 +72,7 @@ namespace Visual.Controllers
                     return new Values(x.ReturnType.ToValueType(), result);
 
                 };
-                    return new { Key = x.Name, Value = @delegate };
+                    return new { Key = x.Name, Value = new FuncInfo(@delegate, x.GetParameters())};
 
                 })
                 .ToDictionary(item => item.Key, item => item.Value);

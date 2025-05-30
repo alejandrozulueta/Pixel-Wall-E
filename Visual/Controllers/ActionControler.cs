@@ -5,23 +5,19 @@ using Visual.Data;
 
 namespace Visual.Controllers
 {
-    public class ActionControler
+    public class ActionControler(CanvasData canvas, BrushData? brush)
     {
-        private CanvasData canvas;
-        private BrushData? brush;
-        private Dictionary<string, Action<Values[]>>? dict;
-
-        public ActionControler(CanvasData canvas)
-        {
-            this.canvas = canvas;
-        }
+        private CanvasData canvas = canvas;
+        private BrushData? brush = brush;
+        private static Dictionary<string, ActionInfo>? dict;
 
         [AttributeDefined("VisualActs")]
         public void Spawn(int x, int y)
         {
-            if(brush is null)
-                brush = new BrushData(x, y);
-            throw new InvalidOperationException("Wall_E ya se ha iniciado");
+            if (brush is not null)
+                throw new InvalidOperationException("Wall_E ya se ha iniciado");
+            brush = new BrushData(x, y);
+            return;
         }
 
         [AttributeDefined("VisualActs")]
@@ -68,9 +64,9 @@ namespace Visual.Controllers
             throw new NotImplementedException();
         }
 
-        public Dictionary<string, Action<Values[]>> GetActs()
+        public Dictionary<string, ActionInfo> GetActs()
         {
-            dict = dict ?? typeof(FuncControler).GetMethods()
+            dict = dict ?? typeof(ActionControler).GetMethods()
                 .Where(x => x.GetCustomAttribute<AttributeDefined>()?.Name == "VisualActs")
                 .Select(x =>
                 {
@@ -86,7 +82,7 @@ namespace Visual.Controllers
 
                         x.Invoke(this, invokeArgs);
                     };
-                    return new { Key = x.Name, Value = @delegate };
+                    return new { Key = x.Name, Value = new ActionInfo(@delegate, x.GetParameters()) };
                 })
                 .ToDictionary(item => item.Key, item => item.Value);
 

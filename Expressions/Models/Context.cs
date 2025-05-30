@@ -1,28 +1,47 @@
 using Expressions.Visitors;
+using System.Diagnostics;
+using System.Reflection;
+using Expressions.Enum;
 
 namespace Expressions.Models;
 
 public class Context(
-    Dictionary<string, Action<Values[]>>? actions,
-    Dictionary<string, Func<Values[], Values>>? functions
+    Dictionary<string, FuncInfo>? functions,
+    Dictionary<string, ActionInfo>? actions
 )
 {
     public Scope? CurrentScope { get; set; } = null;
-    public Dictionary<string, Action<Values[]>> Actions { get; set; } = actions ?? [];
-    public Dictionary<string, Func<Values[], Values>> Functions { get; set; } = functions ?? [];
+    public Dictionary<string, ActionInfo> Actions { get; set; } = actions ?? [];
+    public Dictionary<string, FuncInfo> Functions { get; set; } = functions ?? [];
 
     public Action<Values[]> GetAction(string action)
     {
-        if (Actions.TryGetValue(action, out Action<Values[]>? act))
-            return act;
+        if (Actions.TryGetValue(action, out ActionInfo? act))
+            return act.Acts;
         return @params => GetFunction(action)(@params);
     }
 
-    internal Func<Values[], Values> GetFunction(string function)
+    public Func<Values[], Values> GetFunction(string function)
     {
-        if (Functions.TryGetValue(function, out Func<Values[], Values>? func))
-            return func;
-        throw new Exception();
+        if (Functions.TryGetValue(function, out FuncInfo? func))
+            return func!.Func;
+        throw new NotImplementedException($"Método {function} no implementado");
+    }
+
+    public ParameterInfo[] GetOParamsInfo(string name, Methods methods) 
+    {
+        switch (methods)
+        {
+            case Methods.Function:
+                Functions.TryGetValue(name, out FuncInfo? func);
+                return func!.Info;
+            case Methods.Action:
+                Actions.TryGetValue(name, out ActionInfo? acts);
+                return acts!.Info;
+            default:
+                throw new NotImplementedException();
+
+        }
     }
 
     public void PopScope()
@@ -37,4 +56,16 @@ public class Context(
     {
         CurrentScope = new Scope([], [], CurrentScope);
     }
+}
+
+public class FuncInfo(Func<Values[], Values> func, ParameterInfo[] info)
+{
+    public Func<Values[], Values> Func { get; set; } = func;
+    public ParameterInfo[] Info { get; set; } = info;    
+}
+
+public class ActionInfo(Action<Values[]> acts, ParameterInfo[] info)
+{
+    public Action<Values[]> Acts { get; set; } = acts;
+    public ParameterInfo[] Info { get; set; } = info;
 }

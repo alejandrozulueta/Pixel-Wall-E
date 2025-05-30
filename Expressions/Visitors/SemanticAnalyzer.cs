@@ -1,9 +1,12 @@
-﻿using Expressions.Interfaces;
+﻿using Expressions.Enum;
+using Expressions.Extensions;
+using Expressions.Interfaces;
 using Expressions.Models;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -121,9 +124,98 @@ namespace Expressions.Visitors
             return new Values(value!.Type, value);
         }
 
-        public void ActionVisit(string action, Values[] value) => Context.GetAction(action)(value);
+        public void ActionVisit(string action, Values[] value) 
+        {
+            Action<Values[]> act;
 
-        public Values FuncVisit(string func, Values[] value) => Context.GetFunction(func)(value);
+            try
+            {
+                act = Context.GetAction(action);
+            }
+
+            catch (Exception e) 
+            {
+                Exceptions.Add(e);
+                return;
+            }
+            
+            var info = act.GetMethodInfo();
+            var @params = Context.GetOParamsInfo(action, Methods.Action);
+
+            if (value.Length < @params.Length) 
+            { 
+                var param = @params[value.Length + 1].Name;
+                message = $"No se ha introducido el parámetro {param}";
+                return;
+            }
+
+            if(value.Length > @params.Length) 
+            {
+                message = $"El método {action} no recibe {value.Length} parámetros";
+                Exceptions.Add(new InvalidOperationException(message));
+                return;
+            }
+
+            for (int i = 0; i < @params.Length; i++)
+            {
+                var paramType = @params[i].ParameterType.ToValueType();
+                var valueType = value[i].Type;
+                if (paramType != valueType) 
+                {
+                    message = $"Se esperaba un tipo {paramType} y se ha introducido un tipo {valueType}";
+                    Exceptions.Add(new InvalidOperationException(message));
+                    return;
+                }
+            }
+        } 
+
+        public Values FuncVisit(string func, Values[] value) 
+        {
+            Func<Values[], Values> funcDef;
+
+            try
+            {
+                funcDef = Context.GetFunction(func);
+            }
+
+            catch (Exception e)
+            {
+                Exceptions.Add(e);
+                return new Values(ValueType.InvalidType);
+            }
+
+            var info = funcDef.GetMethodInfo();
+            var @params = Context.GetOParamsInfo(func, Methods.Function);
+            var returnType = info.ReturnType.ToValueType();
+
+            if (value.Length < @params.Length)
+            {
+                var param = @params[value.Length + 1].Name;
+                message = $"No se ha introduc   ido el parámetro {param}";
+                return new Values(returnType);
+            }
+
+            if (value.Length > @params.Length)
+            {
+                message = $"El método {funcDef} no recibe {value.Length} parámetros";
+                Exceptions.Add(new InvalidOperationException(message));
+                return new Values(returnType);
+            }
+
+            for (int i = 0; i < @params.Length; i++)
+            {
+                var paramType = @params[i].ParameterType.ToValueType();
+                var valueType = value[i].Type;
+                if (paramType != valueType)
+                {
+                    message = $"Se esperaba un tipo {paramType} y se ha introducido un tipo {valueType}";
+                    Exceptions.Add(new InvalidOperationException(message));
+                    return new Values(returnType);
+                }
+            }
+
+            return new Values(returnType);
+        }
 
         public void GotoVisit(string label, Values cond) =>
             targetLabel = (gotoFlag = cond.Value ?? false) ? label : null;

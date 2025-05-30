@@ -17,6 +17,7 @@ namespace Visual
     {
         private const string SETTINGS_KEY = "Settings";
         public CanvasData Canvas { get; protected set; }
+        public BrushData? Brush { get; protected set; }
 
         private Settings settings;
         private FuncControler func;
@@ -29,8 +30,9 @@ namespace Visual
             settings = (Resources[SETTINGS_KEY] as Settings)!;
             
             Canvas = new CanvasData();
-            func = new(Canvas);
-            act = new(Canvas);
+            Brush = null;
+            func = new(Canvas, Brush);
+            act = new(Canvas, Brush);
             main = new(func, act);
 
             DrawGrid();

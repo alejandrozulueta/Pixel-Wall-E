@@ -158,10 +158,15 @@ public class Parser
 
         do
         {
-            if (!GetExpressionType(tokens, out IExpression? value))
+            if (!GetExpressionType(
+                tokens, 
+                out IExpression? value, 
+                GetBooleanExpression,
+                GetStringExpression,
+                GetNumericExpression))
                 return ResetDefault(startIndex, out expressions);
             @params.Add(value!);
-        } while (tokens[tokenIndex++].Identifier != ",");
+        } while (tokens[tokenIndex++].Identifier == ",");
 
         if (tokens[tokenIndex - 1].Identifier != ")")
             return ResetDefault(startIndex, out expressions);
@@ -183,6 +188,8 @@ public class Parser
         {
             if (!getDelegate(tokens, out exp))
                 continue;
+            if (tokens[tokenIndex].Type == TokenType.CloseParenthesis || tokens[tokenIndex].Identifier == ",")
+                return true;
             if (tokens[tokenIndex++].Type == TokenType.EndOfLine)
                 return true;
             tokenIndex = startIndex;

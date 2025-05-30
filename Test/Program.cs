@@ -14,8 +14,7 @@ var codeText = File.ReadAllText(path);
 var tokens = Lexer.Tokenizer(codeText);
 var node = parser.Parse(tokens);
 node.Accept(visit);
-
-
+ 
 // tokens = Lexer.Tokenizer(@"b= a + ""a"" == ""7a""");
 // node = parser.Parse(tokens);
 // node.Accept(visit);

@@ -12,6 +12,7 @@ namespace Expressions.Extensions
         {
             return type switch
             {
+                Type T when T == typeof(int) => ValueType.Double,
                 Type T when T == typeof(double) => ValueType.Double,
                 Type T when T == typeof(string) => ValueType.String,
                 Type T when T == typeof(bool) => ValueType.Bool,

@@ -22,10 +22,10 @@ namespace Visual.Controllers
 
         public void ExecuteCode(string code)
         {
-            var funcs = FuncControler.GetFuncs();
-            var acts = ActionControler.GetActs();
+            Dictionary<string, FuncInfo> funcs = FuncControler.GetFuncs();
+            Dictionary<string, ActionInfo> acts = ActionControler.GetActs();
 
-            var context = new Context(acts, funcs);
+            var context = new Context(funcs, acts);
             var analyzer = new SemanticAnalyzer(context);
             var visit = new Execute(context);
 
