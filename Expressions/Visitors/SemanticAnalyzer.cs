@@ -104,7 +104,6 @@ namespace Expressions.Visitors
                 default:
                     throw new NotImplementedException();
             }
-
         }
 
         public Values ValueVisit(Values value) => value;
@@ -126,26 +125,21 @@ namespace Expressions.Visitors
 
         public void ActionVisit(string action, Values[] value) 
         {
-            Action<Values[]> act;
-
-            try
+            if (!Context.Actions.TryGetValue(action, out ActionInfo? _) || Context.Functions.TryGetValue(action, out FuncInfo? _))
             {
-                act = Context.GetAction(action);
-            }
-
-            catch (Exception e) 
-            {
-                Exceptions.Add(e);
+                message = $"Método {action} no implementado";
+                Exceptions.Add(new NotImplementedException(message));
                 return;
             }
-            
-            var info = act.GetMethodInfo();
+
+            var act = Context.GetAction(action);
             var @params = Context.GetOParamsInfo(action, Methods.Action);
 
             if (value.Length < @params.Length) 
             { 
-                var param = @params[value.Length + 1].Name;
+                var param = @params[value.Length].Name;
                 message = $"No se ha introducido el parámetro {param}";
+                Exceptions.Add(new InvalidOperationException(message));
                 return;
             }
 
@@ -178,7 +172,7 @@ namespace Expressions.Visitors
                 funcDef = Context.GetFunction(func);
             }
 
-            catch (Exception e)
+            catch (NotImplementedException e)
             {
                 Exceptions.Add(e);
                 return new Values(ValueType.InvalidType);
@@ -190,8 +184,8 @@ namespace Expressions.Visitors
 
             if (value.Length < @params.Length)
             {
-                var param = @params[value.Length + 1].Name;
-                message = $"No se ha introduc   ido el parámetro {param}";
+                var param = @params[value.Length].Name;
+                message = $"No se ha introducido el parámetro {param}";
                 return new Values(returnType);
             }
 
@@ -223,7 +217,7 @@ namespace Expressions.Visitors
         public void LabelVisit(string label, int index) => Context.CurrentScope!.Labels[label] = index;
 
         public void BlockVisit(IInstruction[] expressions)
-        {
+         {
             Context.PushScope();
             SearchLabel(expressions);
             for (int i = 0; i < expressions.Length; i++)
@@ -239,7 +233,7 @@ namespace Expressions.Visitors
         }
 
         public bool GetExceptions(out List<Exception>? exceptions) 
-        { 
+         { 
             if(Exceptions.Count > 0) 
             {
                 exceptions = Exceptions;
