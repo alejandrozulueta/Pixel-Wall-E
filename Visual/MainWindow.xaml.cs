@@ -24,6 +24,10 @@ namespace Visual
         private ActionControler act;
         private MainController main;
 
+        private GridLength errorsPanelHeight;
+
+        private CodeInfo? codeInfo;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -35,7 +39,8 @@ namespace Visual
             act = new(Canvas, Brush);
             main = new(func, act);
 
-            DrawGrid();
+            errorsPanelHeight = new GridLength(120, GridUnitType.Pixel);
+            ShowErrorPanel();
         }
 
 
@@ -75,20 +80,58 @@ namespace Visual
             }
         }
 
-        private void UpdateGrid(int row, int col, Color color) 
-        { 
-            
+        private void ShowErrorPanel() 
+        {
+            if (!(Errors.Visibility == Visibility.Collapsed))
+                return;
+
+            EditorArea.Height = new GridLength(1, GridUnitType.Star);
+            ErrorsArea.Height = errorsPanelHeight;
+            Errors.Visibility = Visibility.Visible;
+        }
+
+        public void HideErrorsPanel()
+        {
+            Errors.Visibility = Visibility.Collapsed;
+
+            EditorArea.Height = new GridLength(1, GridUnitType.Star);
+
+            ErrorsArea.Height = GridLength.Auto;
+
         }
 
         private void CodeEditor_KeyDown(object sender, KeyEventArgs e)
         {
+            if (codeInfo is null || Errors.Text != "")
+                return;
+            
             if (e.Key == Key.Enter)
             {
-                string code = CodeEditor.Text;
-
-                main.ExecuteCode(code);
-
+                main.ExecuteCode(codeInfo!);
                 DrawGrid();
+            }
+        }
+
+        private void TextChanged(object sender, TextChangedEventArgs e)
+        {
+            string code = CodeEditor.Text;
+
+            if (code == "")
+                return;
+
+            codeInfo = new CodeInfo(func.GetFuncs(), act.GetActs(), code);
+
+            Errors.Text = "";
+
+            if (!main.TryCode(codeInfo, out List<Exception>? exceptions))
+            {
+                StringBuilder sb = new();
+
+                foreach (var error in exceptions!)
+                {
+                    sb.AppendLine(error.Message);
+                }
+                Errors.Text = sb.ToString();
             }
         }
     }

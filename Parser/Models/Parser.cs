@@ -14,6 +14,8 @@ public class Parser
         out IExpression? exp
     );
 
+    private List<Exception> exceptions = [];
+
     public static readonly Dictionary<string, OpFunc> OpFuncs = new()
     {
         { "+", OpFunc.Shift },
@@ -33,10 +35,12 @@ public class Parser
         { "<=", OpFunc.Reduce },
     };
 
-    public IInstruction Parse(Tokens[] tokens)
+    public IInstruction Parse(Tokens[] tokens, out List<Exception> exceptions)
     {
         tokenIndex = 0;
         var node = GetBlockExpression(tokens);
+
+        exceptions = this.exceptions;
         return tokens[tokenIndex].Type == TokenType.EOS
             ? node
             : throw new InvalidProgramException();
@@ -47,7 +51,7 @@ public class Parser
         List<IInstruction> lines = [];
         var change = true;
 
-        while (change)
+        while (change && tokens[tokenIndex].Type != TokenType.EOS)
         {
             if (change = GetAssingInstruction(tokens, out IInstruction? exp))
                 lines.Add(exp!);
@@ -85,25 +89,37 @@ public class Parser
 
     private bool GetGotoExpression(Tokens[] tokens, out IInstruction? exp)
     {
+        var message = TemplatesErrors.EXPECTEDERROR_2;
+        var message_2 = TemplatesErrors.EXPECTEDERROR_1;
+        GotoExpression node;
+
         var startIndex = tokenIndex;
         if (tokens[tokenIndex++].Type != TokenType.Goto)
             return ResetDefault(startIndex, out exp);
         if (tokens[tokenIndex++].Type != TokenType.OpenBracket)
-            return ResetDefault(startIndex, out exp);
+            return ResetDefault(startIndex, out exp, string.Format(message, '[', tokens[tokenIndex - 1].Identifier));
         var labelName = tokens[tokenIndex].Identifier;
         if (tokens[tokenIndex++].Type != TokenType.Identifier)
-            return ResetDefault(startIndex, out exp);
+            return ResetDefault(startIndex, out exp, string.Format(message, "Indentificador", tokens[tokenIndex - 1].Identifier));
         if (tokens[tokenIndex++].Type != TokenType.CloseBracket)
-            return ResetDefault(startIndex, out exp);
+            return ResetDefault(startIndex, out exp, string.Format(message, "]", tokens[tokenIndex - 1].Identifier));
+
+        if (tokens[tokenIndex++].Type == TokenType.EndOfLine)
+        {
+            node = new GotoExpression(labelName, new ValueExpression(new Values(ValueType.Bool, true)));
+            return GetDefault(node, out exp);
+        }
+
         if (tokens[tokenIndex++].Type != TokenType.OpenParenthesis)
-            return ResetDefault(startIndex, out exp);
-        if (!GetBooleanExpression(tokens, out IExpression? @bool))
-            return ResetDefault(startIndex, out exp);
+            return ResetDefault(startIndex, out exp, string.Format(message, "(", tokens[tokenIndex - 1].Identifier));
+
+        GetBooleanExpression(tokens, out IExpression? @bool);
+
         if (tokens[tokenIndex++].Type != TokenType.CloseParenthesis)
-            return ResetDefault(startIndex, out exp);
+            return ResetDefault(startIndex, out exp, string.Format(message, ")", tokens[tokenIndex - 1].Identifier));
         if (tokens[tokenIndex++].Type != TokenType.EndOfLine)
-            return ResetDefault(startIndex, out exp);
-        var node = new GotoExpression(labelName, @bool!);
+            return ResetDefault(startIndex, out exp, string.Format(message_2, "cambio de línea"));
+        node = new GotoExpression(labelName, @bool!);
         return GetDefault(node, out exp);
     }
 
@@ -111,65 +127,77 @@ public class Parser
 
     private bool GetAssingInstruction(Tokens[] tokens, out IInstruction? exp)
     {
+        var message = TemplatesErrors.EXPECTEDERROR_1;
         int startIndex = tokenIndex;
         if (tokens[tokenIndex++].Type != TokenType.Identifier)
             return ResetDefault(startIndex, out exp);
         if (tokens[tokenIndex++].Type != TokenType.AssingOperator)
             return ResetDefault(startIndex, out exp);
-        if (
-            !GetExpressionType(
+
+        GetExpressionType(
                 tokens,
                 out IExpression? value,
                 GetBooleanExpression,
                 GetStringExpression,
                 GetNumericExpression
-            )
-        )
-            return ResetDefault(startIndex, out exp);
+            );
+        if (tokens[tokenIndex++].Type != TokenType.EndOfLine)
+            return ResetDefault(startIndex, out exp, string.Format(message, "cambio de línea"));
         return AssingDefault(tokens[startIndex].Identifier, value, out exp);
     }
 
     private bool GetCallFunction(Tokens[] tokens, out IInstruction? exp)
     {
+        var message = TemplatesErrors.EXPECTEDERROR_1;
         int startIndex = tokenIndex;
-        if (!CheckFunction(tokens, out IExpression[]? expressions))
-            return ResetDefault(startIndex, out exp);
+        CheckFunction(tokens, out IExpression[]? expressions);
+
         if (tokens[tokenIndex++].Type != TokenType.EndOfLine)
-            return ResetDefault(startIndex, out exp);
+            return ResetDefault(startIndex, out exp, string.Format(message, "cambio de línea"));
         return ActionDefault(tokens[startIndex].Identifier, expressions!, out exp);
     }
 
     private bool GetCallFunction(Tokens[] tokens, out IExpression? exp)
     {
-        int startIndex = tokenIndex;
-        if (!CheckFunction(tokens, out IExpression[]? expressions))
-            return ResetDefault(startIndex, out exp);
+        if (!CheckFunction(tokens, out IExpression[]? expressions)) 
+            return ResetDefault(tokenIndex, out exp);
         return FunctDefault(tokens[tokenIndex++].Identifier, expressions!, out exp);
     }
-
     private bool CheckFunction(Tokens[] tokens, out IExpression[]? expressions)
     {
+        var message = TemplatesErrors.EXPECTEDERROR_1;
+        var message_2 = TemplatesErrors.EXPECTEDERROR_2;
         int startIndex = tokenIndex;
         List<IExpression> @params = [];
         if (tokens[tokenIndex++].Type != TokenType.Identifier)
             return ResetDefault(startIndex, out expressions);
         if (tokens[tokenIndex++].Type != TokenType.OpenParenthesis)
-            return ResetDefault(startIndex, out expressions);
-
+            return ResetDefault(startIndex, out expressions, string.Format(message_2, "( o <-", tokens[tokenIndex - 1].Identifier));
         do
         {
-            if (!GetExpressionType(
-                tokens, 
-                out IExpression? value, 
+            if (tokens[tokenIndex].Type == TokenType.CloseParenthesis)
+            {
+                tokenIndex++;
+                break;
+            }
+
+            if (tokens[tokenIndex].Identifier == ",")
+            {
+                exceptions.Add(new ArgumentException(string.Format(message, "argumento")));
+                continue;
+            }
+
+            GetExpressionType(
+                tokens,
+                out IExpression? value,
                 GetBooleanExpression,
                 GetStringExpression,
-                GetNumericExpression))
-                return ResetDefault(startIndex, out expressions);
+                GetNumericExpression);
             @params.Add(value!);
         } while (tokens[tokenIndex++].Identifier == ",");
 
         if (tokens[tokenIndex - 1].Identifier != ")")
-            return ResetDefault(startIndex, out expressions);
+            return ResetDefault(startIndex, out expressions, string.Format(message_2, ")", tokens[tokenIndex - 1].Identifier));
         return GetDefault([.. @params], out expressions);
     }
 
@@ -186,12 +214,13 @@ public class Parser
         var startIndex = tokenIndex;
         foreach (var getDelegate in getDelegates)
         {
-            if (!getDelegate(tokens, out exp))
-                continue;
-            if (tokens[tokenIndex].Type == TokenType.CloseParenthesis || tokens[tokenIndex].Identifier == ",")
-                return true;
-            if (tokens[tokenIndex++].Type == TokenType.EndOfLine)
-                return true;
+            if (getDelegate(tokens, out exp))
+            {
+                if (tokens[tokenIndex].Type == TokenType.CloseParenthesis
+                || tokens[tokenIndex].Identifier == ","
+                || tokens[tokenIndex++].Type == TokenType.EndOfLine)
+                    return true;
+            }
             tokenIndex = startIndex;
         }
         return ResetDefault(startIndex, out exp);
@@ -388,6 +417,7 @@ public class Parser
     {
         var startIndex = tokenIndex;
         var token = tokens[tokenIndex++];
+        var message = TemplatesErrors.EXPECTEDERROR_2;
         if (token.Type == type && T.TryParse(token.Identifier, null, out T? num1))
             return GetDefault(
                 new ValueExpression(new Values(typeof(T).ToValueType(), num1)),
@@ -397,13 +427,14 @@ public class Parser
             return GetDefault(function, out termExp);
         if (token.Type == TokenType.Identifier)
             return GetDefault(new VariableExpression(token.Identifier), out termExp);
-        if (token.Type != TokenType.OpenParenthesis)
-            return ResetDefault(startIndex, out termExp);
-        if (!getExpressions(tokens, out termExp))
-            return ResetDefault(startIndex, out termExp);
-        if (tokens[tokenIndex++].Type != TokenType.CloseParenthesis)
-            return ResetDefault(startIndex, out termExp);
-        return true;
+        if (token.Type == TokenType.OpenParenthesis)
+        {
+            getExpressions(tokens, out termExp);
+            if (tokens[tokenIndex++].Type != TokenType.CloseParenthesis)
+                return ResetDefault(startIndex, out termExp, string.Format(message, ")", tokens[tokenIndex - 1].Identifier));
+            return true;
+        }
+        return ResetDefault(startIndex, out termExp, string.Format(message, type, token.Type));
     }
 
     private bool MatchToken(Tokens[] tokens, string[] @params, out string? op)
@@ -433,18 +464,28 @@ public class Parser
         return true;
     }
 
-    private bool GetDefault<T>(T value, out T exp)
+    private bool GetDefault<T>(T value, out T exp, string? name = null)
     {
+        if (!string.IsNullOrEmpty(name))
+            exceptions.Add(new InvalidOperationException(name));
         exp = value;
         return true;
     }
 
-    private bool ResetDefault<T>(int index, out T? exp)
+    private bool ResetDefault<T>(int index, out T? exp, string? name = null)
     {
+        if (!string.IsNullOrEmpty(name))
+            exceptions.Add(new InvalidOperationException(name));
         tokenIndex = index;
         exp = default;
         return false;
     }
 
     #endregion
+}
+
+public static class TemplatesErrors
+{
+    public const string EXPECTEDERROR_2 = "Se esperaba un {0} y se recibió {1}";
+    public const string EXPECTEDERROR_1 = "Se esperaba un {0}";
 }

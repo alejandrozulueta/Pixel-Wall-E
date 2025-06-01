@@ -1,3 +1,4 @@
+using System;
 using System.Data;
 using System.Text.RegularExpressions;
 
@@ -5,7 +6,7 @@ namespace Parser.Models;
 
 public static class Lexer
 {
-    public static Tokens[] Tokenizer(string input)
+    public static Tokens[] Tokenizer(string input, out List<Exception> exceptions)
     {
         Regex regex = new(
             @"[a-zA-Z_][a-zA-Z0-9_]*[\t ]*\r\n"
@@ -13,6 +14,8 @@ public static class Lexer
                 + @"|([a-zA-Z_][a-zA-Z0-9_]*)"
                 + @"|\d+(\.\d+)?"
                 + @"|""([^""]*)"""
+                + @"|"".*\r\n"
+                + @"|"".*\n"
                 + @"|(==|>=|<=|!=)"
                 + @"|([\[\]\(\)\+\-\*/%^=><\&\|,])"
                 + @"|[\t ]"
@@ -20,15 +23,16 @@ public static class Lexer
         );
 
         List<Tokens> tokens = [];
-
+        exceptions = [];
+        Exception? exc;
         int count = 0;
         int column = 0;
         int line = 0;
         foreach (var match in regex.Matches(input).Cast<Match>())
         {
             var lex = match.Value;
-            if (input[count] != lex[0])
-                throw new InvalidExpressionException();
+            if (GetException(match, count, out exc))
+                exceptions.Add(exc!);
             column += match.Length;
             count += match.Length;
             TokenType tokenType = GetTokenType(ref lex);
@@ -40,10 +44,39 @@ public static class Lexer
                 line++;
             }
         }
+        if (InvalidCharacter(count, input.Length, out exc))
+            exceptions.Add(exc!);
         if (tokens[^1].Type != TokenType.EndOfLine)
             tokens.Add(new Tokens(TokenType.EndOfLine, "$", line, column));
         tokens.Add(new Tokens(TokenType.EOS, "$", line + 1, 0));
+
         return [.. tokens];
+    }
+
+    private static bool GetException(Match match, int count, out Exception? exc)
+    {
+        var start = match.Value[0];
+        var end = match.Value[^1];
+
+        if (start == '"' && start != end)
+        {
+            exc = new SyntaxErrorException("Se esperaba una \"");
+            return true;
+        }
+
+        return InvalidCharacter(count, match.Index, out exc);
+    }
+
+    private static bool InvalidCharacter(int start, int end, out Exception? exc)
+    {
+        if (start != end)
+        {
+            exc = new SyntaxErrorException("Carácter inválido");
+            return true;
+        }
+
+        exc = null;
+        return false;
     }
 
     private static TokenType GetTokenType(ref string lex)

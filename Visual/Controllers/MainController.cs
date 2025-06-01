@@ -1,4 +1,5 @@
-﻿using Expressions.Models;
+﻿using Expressions.Interfaces;
+using Expressions.Models;
 using Expressions.Visitors;
 using Parser.Models;
 using System;
@@ -6,6 +7,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
+using ParserClass = Parser.Models.Parser;
 
 namespace Visual.Controllers
 {
@@ -13,37 +16,62 @@ namespace Visual.Controllers
     {
         public FuncControler FuncControler { get; }
         public ActionControler ActionControler { get; }
-        
+
+        Dictionary<string, FuncInfo> funcs;
+        Dictionary<string, ActionInfo> acts;
+
         public MainController(FuncControler funcControler, ActionControler actionControler)
         {
             FuncControler = funcControler;
             ActionControler = actionControler;
+
+            funcs = FuncControler.GetFuncs();
+            acts = ActionControler.GetActs();
         }
 
-        public void ExecuteCode(string code)
+        public CodeInfo? GetInfo(string code) =>
+                string.IsNullOrEmpty(code) ? new CodeInfo(funcs, acts, code) : null;
+        
+        public void ExecuteCode(CodeInfo info)
         {
-            Dictionary<string, FuncInfo> funcs = FuncControler.GetFuncs();
-            Dictionary<string, ActionInfo> acts = ActionControler.GetActs();
-
-            var context = new Context(funcs, acts);
-            var analyzer = new SemanticAnalyzer(context);
-            var visit = new Execute(context);
-
-            var tokens = Lexer.Tokenizer(code);
-                
-            var parser = new Parser.Models.Parser();
-
-            
-            var node = parser.Parse(tokens);
-
-            node.Accept(analyzer);
-            if(!analyzer.GetExceptions(out List<Exception>? exceptions)) 
-            { 
-                // Agregar Exc
-                return;
-            }
-
-            node.Accept(visit);
+            var visit = new Execute(info.Context);
+            info.Node.Accept(visit);
         }
+
+        public bool TryCode(CodeInfo info, out List<Exception>? exceptions) 
+        {
+            if (info.Exceptions.Count != 0)
+            {
+                exceptions = info.Exceptions;
+                return false;
+            }
+            var analyzer = new SemanticAnalyzer(info.Context);
+            info.Node.Accept(analyzer);
+            if (analyzer.GetExceptions(out exceptions))
+                return true;
+            return false;
+        }
+    }
+
+    public class CodeInfo
+    {
+        public Context Context { get; set; }
+        public IInstruction Node { get; set; }
+        public List<Exception> Exceptions { get; set; }
+
+        public CodeInfo(Dictionary<string, FuncInfo> funcs, Dictionary<string, ActionInfo> acts, string code) 
+        {
+            Exceptions = [];
+            
+            var parserObj = new ParserClass();
+            var tokens = Lexer.Tokenizer(code, out List<Exception> exceptions);
+
+            Exceptions.AddRange(exceptions);
+
+            Context = new Context(funcs, acts);
+            Node = parserObj.Parse(tokens, out exceptions);
+
+            Exceptions.AddRange(exceptions);
+        }     
     }
 }

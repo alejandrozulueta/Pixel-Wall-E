@@ -1,23 +1,25 @@
+using Expressions.Enum;
 using Expressions.Visitors;
 using System.Diagnostics;
 using System.Reflection;
-using Expressions.Enum;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Expressions.Models;
 
 public class Context(
-    Dictionary<string, FuncInfo>? functions,
-    Dictionary<string, ActionInfo>? actions
+    Dictionary<string, FuncInfo> functions,
+    Dictionary<string, ActionInfo> actions
 )
 {
     public Scope? CurrentScope { get; set; } = null;
-    public Dictionary<string, ActionInfo> Actions { get; set; } = actions ?? [];
-    public Dictionary<string, FuncInfo> Functions { get; set; } = functions ?? [];
+    public Dictionary<string, ActionInfo> Actions { get; set; } = actions;
+    public Dictionary<string, FuncInfo> Functions { get; set; } = functions;
 
     public Action<Values[]> GetAction(string action)
     {
         if (Actions.TryGetValue(action, out ActionInfo? act))
             return act.Acts;
+
         return @params => GetFunction(action)(@params);
     }
 
@@ -40,7 +42,6 @@ public class Context(
                 return acts!.Info;
             default:
                 throw new NotImplementedException();
-
         }
     }
 

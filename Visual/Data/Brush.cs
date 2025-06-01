@@ -9,7 +9,7 @@ namespace Visual.Data
 {
     public class BrushData(int x, int y)
     {
-        public Color CurrentColor { get; set; } = Color.Transparent;
+        public Color CurrentColor { get; set; } = Color.Red;
         public int CurrentX { get; set; } = x;
         public int CurrentY { get; set;} = y;
         public int Size { get; set; } = 1;
