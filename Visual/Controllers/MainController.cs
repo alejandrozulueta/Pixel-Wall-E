@@ -29,9 +29,6 @@ namespace Visual.Controllers
             acts = ActionControler.GetActs();
         }
 
-        public CodeInfo? GetInfo(string code) =>
-                string.IsNullOrEmpty(code) ? new CodeInfo(funcs, acts, code) : null;
-        
         public void ExecuteCode(CodeInfo info)
         {
             var visit = new Execute(info.Context);
@@ -55,23 +52,24 @@ namespace Visual.Controllers
 
     public class CodeInfo
     {
+        public Tokens[] Tokens { get; set; }
         public Context Context { get; set; }
         public IInstruction Node { get; set; }
         public List<Exception> Exceptions { get; set; }
 
-        public CodeInfo(Dictionary<string, FuncInfo> funcs, Dictionary<string, ActionInfo> acts, string code) 
+        public CodeInfo(Dictionary<string, FuncInfo> funcs, Dictionary<string, ActionInfo> acts, string code)
         {
             Exceptions = [];
-            
+
             var parserObj = new ParserClass();
-            var tokens = Lexer.Tokenizer(code, out List<Exception> exceptions);
+            Tokens = Lexer.Tokenizer(code, out List<Exception> exceptions);
 
             Exceptions.AddRange(exceptions);
 
             Context = new Context(funcs, acts);
-            Node = parserObj.Parse(tokens, out exceptions);
+            Node = parserObj.Parse(Tokens, out exceptions);
 
             Exceptions.AddRange(exceptions);
-        }     
+        }
     }
 }

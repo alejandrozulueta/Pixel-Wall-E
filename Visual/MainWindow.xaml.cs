@@ -1,6 +1,8 @@
-﻿using System.Text;
+﻿using Parser.Models;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -10,6 +12,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Visual.Controllers;
 using Visual.Data;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Visual
 {
@@ -41,8 +44,66 @@ namespace Visual
 
             errorsPanelHeight = new GridLength(120, GridUnitType.Pixel);
             ShowErrorPanel();
+
+            SuggestionPopup.PlacementTarget = CodeEditor;
         }
 
+        private void TextChanged(object sender, TextChangedEventArgs e)
+        {
+            string code = CodeEditor.Text;
+
+            if (code == "")
+                return;
+
+
+            codeInfo = new CodeInfo(func.GetFuncs(), act.GetActs(), code);
+
+            GetSuggest(codeInfo);
+            
+            Errors.Text = "";
+
+            if (!main.TryCode(codeInfo, out List<Exception>? exceptions))
+            {
+                StringBuilder sb = new();
+
+                foreach (var error in exceptions!)
+                {
+                    sb.AppendLine(error.Message);
+                }
+                Errors.Text = sb.ToString();
+            }
+        }
+
+        private void CodeEditor_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (codeInfo is null || Errors.Text != "")
+                return;
+
+            if (!(e.Key == Key.Enter))
+                return;
+
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                main.ExecuteCode(codeInfo!);
+                DrawGrid();
+                return;
+            }
+        }
+
+        private void MainKeyControl(object sender, KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.P)
+            {
+                if (Errors.Visibility == Visibility.Visible)
+                {
+                    HideErrorsPanel();
+                    return;
+                }
+
+                ShowErrorPanel();
+                return;
+            }
+        }
 
         private void DrawGrid()
         {
@@ -93,46 +154,137 @@ namespace Visual
         public void HideErrorsPanel()
         {
             Errors.Visibility = Visibility.Collapsed;
-
             EditorArea.Height = new GridLength(1, GridUnitType.Star);
-
             ErrorsArea.Height = GridLength.Auto;
-
         }
 
-        private void CodeEditor_KeyDown(object sender, KeyEventArgs e)
+        private void GetSuggest(CodeInfo codeInfo)
         {
-            if (codeInfo is null || Errors.Text != "")
+            string currentText = CodeEditor.Text;
+            int caretIndex = CodeEditor.CaretIndex;
+            List<string> Sugg = [];
+            int horizontalMargin = 15;
+
+            SuggestionPopup.IsOpen = false;
+
+            if (string.IsNullOrWhiteSpace(currentText) || caretIndex == 0)
+            {
+                SuggestionPopup.IsOpen = false;
+                return;
+            }
+
+            string wordToSuggest = GetWord(currentText, caretIndex);
+
+            Sugg = GetSugg(codeInfo, wordToSuggest);
+
+            if (!Sugg.Any())
                 return;
             
-            if (e.Key == Key.Enter)
+            if (string.IsNullOrWhiteSpace(wordToSuggest))
             {
-                main.ExecuteCode(codeInfo!);
-                DrawGrid();
+                SuggestionPopup.IsOpen = false;
+                return;
             }
+
+            SuggestionListBox.ItemsSource = Sugg;
+            SuggestionListBox.SelectedIndex = -1;
+
+            Rect caretVisualRect = CodeEditor.GetRectFromCharacterIndex(caretIndex);
+
+            Point placementPoint;
+
+            
+            if (caretIndex > 0)
+            {
+                Rect prevCharRect = CodeEditor.GetRectFromCharacterIndex(caretIndex - 1);
+                placementPoint = new Point(prevCharRect.Right, prevCharRect.Top);
+            }
+                
+            placementPoint = new Point(caretVisualRect.Left + horizontalMargin, caretVisualRect.Top);
+
+            SuggestionPopup.CustomPopupPlacementCallback = GetPopupPlacementCallback(placementPoint);
+            
+            SuggestionPopup.IsOpen = true;
+            
         }
 
-        private void TextChanged(object sender, TextChangedEventArgs e)
+        private List<string> GetSugg(CodeInfo codeInfo, string wordToSuggest)
         {
-            string code = CodeEditor.Text;
+            List<string> suggs = [];
 
-            if (code == "")
-                return;
+            var tokens = codeInfo.Tokens;
 
-            codeInfo = new CodeInfo(func.GetFuncs(), act.GetActs(), code);
-
-            Errors.Text = "";
-
-            if (!main.TryCode(codeInfo, out List<Exception>? exceptions))
+            foreach (var act in codeInfo.Context.Actions.Keys)
             {
-                StringBuilder sb = new();
-
-                foreach (var error in exceptions!)
-                {
-                    sb.AppendLine(error.Message);
-                }
-                Errors.Text = sb.ToString();
+                if (act.ToLower().StartsWith(wordToSuggest.ToLower()))
+                    suggs.Add(act);
             }
+
+            foreach (var func in codeInfo.Context.Functions.Keys)
+            {
+                if (func.ToLower().StartsWith(wordToSuggest.ToLower()))
+                    suggs.Add(func);
+            }
+
+
+            for (int i = 0; i < tokens.Length - 1; i++)
+            {
+                var token = tokens[i]; 
+                var indentifier = token.Identifier;
+
+                if (indentifier == wordToSuggest)
+                    break;
+
+                if (tokens[i + 1].Type is not TokenType.AssingOperator)
+                    continue;
+
+                if (indentifier.ToLower().StartsWith(wordToSuggest.ToLower()) && !suggs.Contains(indentifier))
+                    suggs.Add(indentifier);
+            }
+
+            return suggs;
+        }
+
+        private CustomPopupPlacementCallback GetPopupPlacementCallback(Point placementPoint)
+        {
+            return (popupSize, targetSize, offset) =>
+            {
+                return
+                [
+            new CustomPopupPlacement(placementPoint, PopupPrimaryAxis.Horizontal),
+            new CustomPopupPlacement(new Point(placementPoint.X - popupSize.Width - CodeEditor.FontSize, placementPoint.Y), PopupPrimaryAxis.Horizontal),
+            new CustomPopupPlacement(new Point(placementPoint.X, placementPoint.Y + CodeEditor.FontSize), PopupPrimaryAxis.Vertical),
+            new CustomPopupPlacement(new Point(placementPoint.X, placementPoint.Y - popupSize.Height), PopupPrimaryAxis.Vertical)
+                ];
+            };
+        }
+
+
+        private string GetWord(string text, int caretIndex)
+        {
+            int startIndex = caretIndex - 1;
+
+            while (startIndex >= 0)
+            {
+                char currentChar = text[startIndex];
+
+                if (startIndex == 0)
+                    break;
+                
+                if (char.IsWhiteSpace(currentChar) ||
+                    currentChar == '(' || currentChar == ')' ||
+                    currentChar == '{' || currentChar == '}' ||
+                    currentChar == '[' || currentChar == ']' ||
+                    currentChar == '.' || currentChar == ',' ||
+                    currentChar == ';' || currentChar == ':')
+                {
+                    startIndex++;
+                    break;
+                }
+
+                startIndex--;
+            }
+            return text[startIndex..caretIndex];
         }
     }
 
