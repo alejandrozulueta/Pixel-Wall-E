@@ -56,16 +56,19 @@ public class Parser
             var exist = exceptions.Count;
             if (change = GetAssingInstruction(tokens, out IInstruction? exp))
                 lines.Add(exp!);
-            else if (change = exist == exceptions.Count && GetCallFunction(tokens, out exp))
+            else if (change = AddExc(exist) && GetCallFunction(tokens, out exp))
                 lines.Add(exp!);
-            else if (change = exist == exceptions.Count && GetLabelExpression(tokens, lines.Count, out exp))
+            else if (change = AddExc(exist) && GetLabelExpression(tokens, lines.Count, out exp))
                 lines.Add(exp!);
-            else if (change = exist == exceptions.Count && GetGotoExpression(tokens, out exp))
+            else if (change = AddExc(exist) && GetGotoExpression(tokens, out exp))
                 lines.Add(exp!);
             change = change || GetEmptyLine(tokens);
         }
         return new BlockInstruction([.. lines]);
     }
+    
+    private bool AddExc(int exist) =>
+        exist == exceptions.Count;
 
     private bool GetEmptyLine(Tokens[] tokens)
     {
@@ -136,13 +139,17 @@ public class Parser
             return ResetDefault(startIndex, out exp);
 
         var exist = exceptions.Count;
+
+        if (tokens[tokenIndex].Type == TokenType.EndOfLine && AddExc(exist))
+            return ResetDefault(startIndex, out exp, string.Format(message, "asignación"));
+
         if (!GetExpressionType(tokens, out IExpression? value))
         {
-            var name = exist == exceptions.Count ? string.Format(message, "Número, Booleano o String") : null;
+            var name = AddExc(exist) ? string.Format(message, "Número, Booleano o String") : null;
             return ResetDefault(startIndex, out exp, name);
         }
 
-        if (tokens[tokenIndex++].Type != TokenType.EndOfLine && exist == exceptions.Count)
+        if (tokens[tokenIndex++].Type != TokenType.EndOfLine && AddExc(exist))
             return ResetDefault(startIndex, out exp, string.Format(message, "cambio de línea"));
         return AssingDefault(tokens[startIndex].Identifier, value, out exp);
     }
@@ -155,7 +162,7 @@ public class Parser
         var exist = exceptions.Count;
         CheckFunction(tokens, out IExpression[]? expressions);
 
-        if (tokens[tokenIndex++].Type != TokenType.EndOfLine && exist == exceptions.Count)
+        if (tokens[tokenIndex++].Type != TokenType.EndOfLine && AddExc(exist))
             return ResetDefault(startIndex, out exp, string.Format(message, "cambio de línea"));
         return ActionDefault(tokens[startIndex].Identifier, expressions!, out exp);
     }
@@ -197,7 +204,7 @@ public class Parser
         } while (tokens[tokenIndex++].Identifier == ",");
 
         if (tokens[tokenIndex - 1].Identifier != ")")
-            return ResetDefault(startIndex, out expressions, string.Format(message_2, ")", tokens[tokenIndex - 1].Identifier));
+            return ResetDefault(startIndex, out expressions, string.Format(message, ")"));
         return GetDefault([.. @params], out expressions);
     }
 
@@ -210,13 +217,15 @@ public class Parser
         out IExpression? exp
     )
     {
-        // DispatcherTypeBool(tokens, out exp)
         var exist = exceptions.Count;
         var startIndex = tokenIndex;
+        if (DispatcherTypeBool(tokens, out exp))
+            return true;
+        tokenIndex = startIndex;
         if (DispatcherTypeNum(tokens, out exp))
             return true;
         tokenIndex = startIndex;
-        if (exceptions.Count == exist && DispatcherTypeString(tokens, out exp))
+        if (AddExc(exist) && DispatcherTypeString(tokens, out exp))
             return true;
         return ResetDefault(startIndex, out exp);
     }
@@ -549,6 +558,6 @@ public class Parser
 
 public static class TemplatesErrors
 {
-    public const string EXPECTEDERROR_2 = "Se esperaba un {0} y se recibió {1}";
-    public const string EXPECTEDERROR_1 = "Se esperaba un {0}";
+    public const string EXPECTEDERROR_2 = "Se espera {0} y se recibió {1}";
+    public const string EXPECTEDERROR_1 = "Se espera {0}";
 }

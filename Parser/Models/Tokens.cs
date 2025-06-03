@@ -25,4 +25,5 @@ public class Tokens(TokenType type, string identifier, int row, int col)
     public string Identifier => identifier;
     public int Row => row;
     public int Col => col;
+
 }
