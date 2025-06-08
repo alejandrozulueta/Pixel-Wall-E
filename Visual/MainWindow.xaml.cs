@@ -1,4 +1,5 @@
 ﻿using Parser.Models;
+using System.Security.Policy;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -12,15 +13,15 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Visual.Controllers;
 using Visual.Data;
-using static System.Net.Mime.MediaTypeNames;
+using Visual.Interfaces;
 
 namespace Visual
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, IPaint
     {
         private const string SETTINGS_KEY = "Settings";
-        public CanvasData Canvas { get; protected set; }
-        public BrushData? Brush { get; protected set; }
+        public CanvasData Canvas { get; set; }
+        public BrushData? Brush { get; set; }
 
         private Settings settings;
         private FuncControler func;
@@ -35,11 +36,10 @@ namespace Visual
         {
             InitializeComponent();
             settings = (Resources[SETTINGS_KEY] as Settings)!;
-            
+
             Canvas = new CanvasData();
-            Brush = null;
-            func = new(Canvas, Brush);
-            act = new(Canvas, Brush);
+            func = new(this);
+            act = new(this);
             main = new(func, act);
 
             errorsPanelHeight = new GridLength(120, GridUnitType.Pixel);
@@ -55,11 +55,10 @@ namespace Visual
             if (code == "")
                 return;
 
-
             codeInfo = new CodeInfo(func.GetFuncs(), act.GetActs(), code);
 
             GetSuggest(codeInfo);
-            
+
             Errors.Text = "";
 
             if (!main.TryCode(codeInfo, out List<Exception>? exceptions))
@@ -74,20 +73,38 @@ namespace Visual
             }
         }
 
+        private void ResizeEvent(object sender, RoutedEventArgs e) =>
+            Resize();
+        
         private void CodeEditor_KeyDown(object sender, KeyEventArgs e)
         {
             if (codeInfo is null || Errors.Text != "")
                 return;
 
-            if (!(e.Key == Key.Enter))
+            if (Keyboard.Modifiers != ModifierKeys.Control)
                 return;
 
-            if (Keyboard.Modifiers == ModifierKeys.Control)
+            if (e.Key == Key.Space)
             {
-                main.ExecuteCode(codeInfo!);
-                DrawGrid();
+                GetSuggest(codeInfo);
                 return;
             }
+
+            if (e.Key != Key.Enter)
+                return;
+
+            Canvas = new CanvasData(Canvas.Rows, Canvas.Cols);
+            Brush = null;
+            try
+            {
+                main.ExecuteCode(codeInfo!);
+            }
+            catch (Exception ex) 
+            {
+                // PopUp
+                return;
+            }
+            DrawGrid();
         }
 
         private void MainKeyControl(object sender, KeyEventArgs e)
@@ -107,13 +124,13 @@ namespace Visual
 
         private void DrawGrid()
         {
-          
+
             DrawCanvas.Children.Clear();
 
             double widthCells = DrawCanvas.ActualWidth / Canvas.Cols;
             double heightCells = DrawCanvas.ActualHeight / Canvas.Rows;
 
-            for (int i = 0; i < Canvas.Rows; i++) 
+            for (int i = 0; i < Canvas.Rows; i++)
             {
                 for (int j = 0; j < Canvas.Cols; j++)
                 {
@@ -132,7 +149,7 @@ namespace Visual
                         StrokeThickness = 0.5
                     };
 
-                
+
                     System.Windows.Controls.Canvas.SetLeft(celdaRect, j * widthCells);
                     System.Windows.Controls.Canvas.SetTop(celdaRect, i * heightCells);
 
@@ -141,7 +158,13 @@ namespace Visual
             }
         }
 
-        private void ShowErrorPanel() 
+        private void Resize(int rows = 20, int cols = 20)
+        {
+            Canvas = new CanvasData(rows, cols);
+            DrawGrid();
+        }
+
+        private void ShowErrorPanel()
         {
             if (!(Errors.Visibility == Visibility.Collapsed))
                 return;
@@ -179,7 +202,7 @@ namespace Visual
 
             if (!Sugg.Any())
                 return;
-            
+
             if (string.IsNullOrWhiteSpace(wordToSuggest))
             {
                 SuggestionPopup.IsOpen = false;
@@ -193,19 +216,19 @@ namespace Visual
 
             Point placementPoint;
 
-            
+
             if (caretIndex > 0)
             {
                 Rect prevCharRect = CodeEditor.GetRectFromCharacterIndex(caretIndex - 1);
                 placementPoint = new Point(prevCharRect.Right, prevCharRect.Top);
             }
-                
+
             placementPoint = new Point(caretVisualRect.Left + horizontalMargin, caretVisualRect.Top);
 
             SuggestionPopup.CustomPopupPlacementCallback = GetPopupPlacementCallback(placementPoint);
-            
+
             SuggestionPopup.IsOpen = true;
-            
+
         }
 
         private List<string> GetSugg(CodeInfo codeInfo, string wordToSuggest)
@@ -229,7 +252,7 @@ namespace Visual
 
             for (int i = 0; i < tokens.Length - 1; i++)
             {
-                var token = tokens[i]; 
+                var token = tokens[i];
                 var indentifier = token.Identifier;
 
                 if (indentifier == wordToSuggest)
@@ -270,7 +293,7 @@ namespace Visual
 
                 if (startIndex == 0)
                     break;
-                
+
                 if (char.IsWhiteSpace(currentChar) ||
                     currentChar == '(' || currentChar == ')' ||
                     currentChar == '{' || currentChar == '}' ||

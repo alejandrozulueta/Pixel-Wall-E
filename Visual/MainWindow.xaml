@@ -22,7 +22,8 @@
         </Grid.ColumnDefinitions>
 
         <Canvas x:Name="DrawCanvas"
-                Grid.Column="0"/>
+                Grid.Column="0"
+                Loaded="ResizeEvent"/>
 
         <Grid Grid.Column="2" x:Name="RightPanelGrid" >
             <Grid.RowDefinitions>

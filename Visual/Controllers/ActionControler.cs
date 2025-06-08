@@ -1,30 +1,30 @@
-﻿using System.Reflection;
+﻿using System.Drawing;
+using System.Reflection;
 using Visual.Attributes;
-using Visual.Extensions;
 using Visual.Data;
-using System.Drawing;
+using Visual.Extensions;
+using Visual.Interfaces;
 
 namespace Visual.Controllers
 {
-    public class ActionControler(CanvasData canvas, BrushData? brush)
+    public class ActionControler(IPaint paint)
     {
-        private CanvasData canvas = canvas;
-        private BrushData? brush = brush;
+        IPaint _paint = paint;
         private static Dictionary<string, ActionInfo>? dict;
 
         [AttributeDefined("VisualActs")]
         public void Spawn(int x, int y)
         {
-            if (brush is not null)
+            if (_paint.Brush is not null)
                 throw new InvalidOperationException("Wall_E ya se ha iniciado");
-            brush = new BrushData(x, y);
+            _paint.Brush = new BrushData(x, y);
             return;
         }
 
         [AttributeDefined("VisualActs")]
         public void Color(string color)
         {
-            brush!.CurrentColor = color.ToColor();   
+            _paint.Brush!.CurrentColor = color.ToColor();   
         }
 
         [AttributeDefined("VisualActs")]
@@ -32,40 +32,40 @@ namespace Visual.Controllers
         {
             if (size % 2 == 0)
                 size--;
-            brush!.Size = size;
+            _paint.Brush!.Size = size;
         }
 
         [AttributeDefined("VisualActs")]
         public void DrawLine(int dirX, int dirY, int distance)
         {
-            int startLineX = brush!.CurrentX;
-            int startLineY = brush!.CurrentY;
+            int startLineX = _paint.Brush!.CurrentX;
+            int startLineY = _paint.Brush!.CurrentY;
 
             for (int i = 0; i <= distance; i++)
             {
                 int currentCenterX = startLineX + dirX * i;
                 int currentCenterY = startLineY + dirY * i;
-                PaintPixel(canvas, currentCenterX, currentCenterY, brush.CurrentColor, brush.Size);
+                PaintPixel(_paint.Canvas!, currentCenterX, currentCenterY, _paint.Brush.CurrentColor, _paint.Brush.Size);
             }
 
-            brush.CurrentX = startLineX + dirX * distance;
-            brush.CurrentY = startLineY + dirY * distance;
+            _paint.Brush.CurrentX = startLineX + dirX * distance;
+            _paint.Brush.CurrentY = startLineY + dirY * distance;
         }
 
         [AttributeDefined("VisualActs")]
         public void DrawCircle(int dirX, int dirY, int radius)
         {
-            int circleCenterX = brush!.CurrentX + dirX * radius;
-            int circleCenterY = brush!.CurrentY + dirY * radius;
+            int circleCenterX = _paint.Brush!.CurrentX + dirX * radius;
+            int circleCenterY = _paint.Brush!.CurrentY + dirY * radius;
 
-            brush!.CurrentX = circleCenterX;
-            brush!.CurrentY = circleCenterY;
+            _paint.Brush!.CurrentX = circleCenterX;
+            _paint.Brush!.CurrentY = circleCenterY;
 
             int x = radius;
             int y = 0;
             int p = 1 - radius;
 
-            CircleOctants(canvas, circleCenterX, circleCenterY, x, y);
+            CircleOctants(_paint.Canvas!, circleCenterX, circleCenterY, x, y);
 
             while (x > y)
             {
@@ -84,18 +84,18 @@ namespace Visual.Controllers
                 if (x < y)
                     break;
 
-                CircleOctants(canvas, circleCenterX, circleCenterY, x, y);
+                CircleOctants(_paint.Canvas!, circleCenterX, circleCenterY, x, y);
             }
         }
 
         [AttributeDefined("VisualActs")]
         public void DrawRectangle(int dirX, int dirY, int distance, int width, int height)
         {
-            int rectCenterX = brush!.CurrentX + dirX * distance;
-            int rectCenterY = brush!.CurrentY + dirY * distance;
+            int rectCenterX = _paint.Brush!.CurrentX + dirX * distance;
+            int rectCenterY = _paint.Brush!.CurrentY + dirY * distance;
 
-            brush!.CurrentX = rectCenterX;
-            brush!.CurrentY = rectCenterY;
+            _paint.Brush!.CurrentX = rectCenterX;
+            _paint.Brush!.CurrentY = rectCenterY;
 
             width = width % 2 != 0 ? width : width + 1;
             height = height % 2 != 0 ? height : height + 1;
@@ -111,40 +111,39 @@ namespace Visual.Controllers
             int top = interiorTop - 1;
             int bottom = interiorTop + height;
 
-            Color color = brush!.CurrentColor; ;
-            int size = brush.Size;
+            Color color = _paint.Brush!.CurrentColor; ;
+            int size = _paint.Brush.Size;
 
             for (int x = left; x <= right; x++)
             {
-                PaintPixel(canvas, x, top, color, size);
+                PaintPixel(_paint.Canvas, x, top, color, size);
             }
 
             for (int x = left; x <= right; x++)
             {
-                PaintPixel(canvas, x, bottom, color, size);
+                PaintPixel(_paint.Canvas, x, bottom, color, size);
             }
 
             for (int y = top + 1; y < bottom; y++) 
             {
-                PaintPixel(canvas, left, y, color, size);
+                PaintPixel(_paint.Canvas, left, y, color, size);
             }
 
             for (int y = top + 1; y < bottom; y++) 
             {
-                PaintPixel(canvas, right, y, color, size);
+                PaintPixel(_paint.Canvas, right, y, color, size);
             }
         }
 
         [AttributeDefined("VisualActs")]
         public void Fill()
         {
-            Color targetColor = canvas.CellsColor[brush!.CurrentY, brush!.CurrentX];
-            Color fillColor = brush.CurrentColor;
-            int size = brush.Size;
+            Color targetColor = _paint.Canvas.CellsColor[_paint.Brush!.CurrentY, _paint.Brush!.CurrentX];
+            Color fillColor = _paint.Brush.CurrentColor;
+            int size = _paint.Brush.Size;
 
-            RecursiveFill(canvas, brush!.CurrentY, brush!.CurrentX, targetColor, fillColor, size);
+            RecursiveFill(_paint.Canvas, _paint.Brush!.CurrentY, _paint.Brush!.CurrentX, targetColor, fillColor, size);
         }
-
 
         private void PaintPixel(CanvasData canvas, int centerX, int centerY, Color color, int brushSize)
         {
@@ -169,8 +168,8 @@ namespace Visual.Controllers
 
         private void CircleOctants(CanvasData canvas, int centerX, int centerY, int x, int y)
         {
-            Color color = brush!.CurrentColor; ;
-            int size = brush.Size;
+            Color color = _paint.Brush!.CurrentColor; ;
+            int size = _paint.Brush.Size;
 
             PaintPixel(canvas, centerX + x, centerY + y, color, size);
             PaintPixel(canvas, centerX - x, centerY + y, color, size);

@@ -1,13 +1,13 @@
 ﻿using System.Reflection;
 using Visual.Attributes;
 using Visual.Data;
+using Visual.Interfaces;
 
 namespace Visual.Controllers
 {
-    public class FuncControler(CanvasData canvas, BrushData? brush)
+    public class FuncControler(IPaint paint)
     {
-        private CanvasData canvas = canvas;
-        private BrushData? brush = brush;
+        IPaint _paint = paint;
         private static Dictionary<string, FuncInfo>? dict;
 
         [AttributeDefined("VisualFuncs")]
