@@ -15,8 +15,6 @@ namespace Expressions.Visitors
     public class SemanticAnalyzer(Context Context) : IExpressionsVisitor
     {
         List<Exception> Exceptions = [];
-        private bool gotoFlag;
-        private string? targetLabel;
         private string? message;
 
         public void Visit(IInstruction node) => node.Accept(this);
@@ -211,44 +209,33 @@ namespace Expressions.Visitors
             return new Values(returnType);
         }
 
-        public void GotoVisit(string label, Values cond) =>
-            targetLabel = (gotoFlag = cond.Value ?? false) ? label : null;
+        public void GotoVisit(string label, Values cond) 
+        {
+            if (!Context.CurrentScope!.TryGetLabel(label, out int _))
+            {
+                message = $"La etiqueta {label} no existe en el contexto actual";
+                Exceptions.Add(new InvalidOperationException(message));
+            }
 
-        public void LabelVisit(string label, int index) => Context.CurrentScope!.Labels[label] = index;
+            if (cond.Type != ValueType.Bool && cond.Type != ValueType.InvalidType)
+            {
+                message = $"Se esperaba un booleano";
+                Exceptions.Add(new InvalidOperationException(message));
+            }
+        }
+
+        public void LabelVisit(string label, int index) =>
+            Context.CurrentScope!.Labels[label] = index;
 
         public void BlockVisit(IInstruction[] expressions)
-         {
+        {
             Context.PushScope();
             SearchLabel(expressions);
             for (int i = 0; i < expressions.Length; i++)
             {
                 expressions[i].Accept(this);
-                if (!gotoFlag)
-                    continue;
-                if (!Context.CurrentScope!.TryGetLabel(targetLabel!, out int temp))
-                    break;
-                ResetGotoFlag(temp, out i);
             }
             Context.PopScope();
-        }
-
-        public bool GetExceptions(out List<Exception>? exceptions) 
-         { 
-            if(Exceptions.Count > 0) 
-            {
-                exceptions = Exceptions;
-                return false; 
-            }
-
-            exceptions = null;
-            return true;
-        }
-
-        public void ResetGotoFlag(int gotoIndex, out int index)
-        {
-            index = gotoIndex;
-            gotoFlag = false;
-            targetLabel = null;
         }
 
         private void SearchLabel(IInstruction[] expressions)
@@ -259,6 +246,18 @@ namespace Expressions.Visitors
                     continue;
                 label.Accept(this);
             }
+        }
+
+        public bool GetExceptions(out List<Exception>? exceptions) 
+        { 
+            if(Exceptions.Count > 0) 
+            {
+                exceptions = Exceptions;
+                return false; 
+            }
+
+            exceptions = null;
+            return true;
         }
     }
 }

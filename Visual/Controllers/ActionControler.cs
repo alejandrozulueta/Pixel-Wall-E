@@ -30,8 +30,7 @@ namespace Visual.Controllers
         [AttributeDefined("VisualActs")]
         public void Size(int size)
         {
-            if (size % 2 == 0)
-                size--;
+            size += (size + 1) % 2;
             _paint.Brush!.Size = size;
         }
 
@@ -55,6 +54,8 @@ namespace Visual.Controllers
         [AttributeDefined("VisualActs")]
         public void DrawCircle(int dirX, int dirY, int radius)
         {
+            radius += (radius + 1) % 2;
+
             int circleCenterX = _paint.Brush!.CurrentX + dirX * radius;
             int circleCenterY = _paint.Brush!.CurrentY + dirY * radius;
 
@@ -97,8 +98,8 @@ namespace Visual.Controllers
             _paint.Brush!.CurrentX = rectCenterX;
             _paint.Brush!.CurrentY = rectCenterY;
 
-            width = width % 2 != 0 ? width : width + 1;
-            height = height % 2 != 0 ? height : height + 1;
+            width += (width + 1) % 2; 
+            height += (height + 1) % 2; 
 
             int halfWidth = width / 2;
             int halfHeight = height / 2;

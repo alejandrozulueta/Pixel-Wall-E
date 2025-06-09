@@ -17,7 +17,7 @@ public static class Lexer
                 + @"|"".*\r\n"
                 + @"|"".*\n"
                 + @"|(==|>=|<=|!=)"
-                + @"|([\[\]\(\)\+\-\*/%^=><\&\|,])"
+                + @"|([\[\]\(\)\+\-\*/%^=><\&\|,!])"
                 + @"|[\t ]"
                 + @"|\r\n|\n"
         );
@@ -37,7 +37,19 @@ public static class Lexer
             count += match.Length;
             TokenType tokenType = GetTokenType(ref lex);
             if (!string.IsNullOrEmpty(lex.Trim()) || tokenType is TokenType.EndOfLine)
+            {
+                if (lex == "-")
+                {
+                    var type = tokens.Last().Type;
+
+                    if (!(type == TokenType.Num || type == TokenType.Bool || type == TokenType.String))
+                    {
+                        tokenType = TokenType.UnaryOperator;
+                    }
+                }
+
                 tokens.Add(new Tokens(tokenType, lex, line, column));
+            }
             if (tokenType is TokenType.EndOfLine or TokenType.Label)
             {
                 column = 0;
