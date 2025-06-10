@@ -20,6 +20,7 @@ public static class Lexer
                 + @"|([\[\]\(\)\+\-\*/%^=><\&\|,!])"
                 + @"|[\t ]"
                 + @"|\r\n|\n"
+                + @"|."
         );
 
         List<Tokens> tokens = [];
@@ -29,10 +30,8 @@ public static class Lexer
         int column = 0;
         int line = 0;
         foreach (var match in regex.Matches(input).Cast<Match>())
-        {
+         {
             var lex = match.Value;
-            if (GetException(match, count, out exc))
-                exceptions.Add(exc!);
             column += match.Length;
             count += match.Length;
             TokenType tokenType = GetTokenType(ref lex);
@@ -40,7 +39,7 @@ public static class Lexer
             {
                 if (lex == "-")
                 {
-                    var type = tokens.Last().Type;
+                    var type = tokens.Count > 0 ? tokens[^1].Type : TokenType.InvalidToken;
 
                     if (!(type == TokenType.Num || type == TokenType.Bool || type == TokenType.String))
                     {
@@ -48,6 +47,11 @@ public static class Lexer
                     }
                 }
 
+                if (tokenType == TokenType.InvalidToken)
+                {
+                    exceptions.Add(new SyntaxErrorException("Carácter inválido"));
+                    continue;
+                }
                 tokens.Add(new Tokens(tokenType, lex, line, column));
             }
             if (tokenType is TokenType.EndOfLine or TokenType.Label)
@@ -63,20 +67,6 @@ public static class Lexer
         tokens.Add(new Tokens(TokenType.EOS, "$", line + 1, 0));
 
         return [.. tokens];
-    }
-
-    private static bool GetException(Match match, int count, out Exception? exc)
-    {
-        var start = match.Value[0];
-        var end = match.Value[^1];
-
-        if (start == '"' && start != end)
-        {
-            exc = new SyntaxErrorException("Se esperaba una \"");
-            return true;
-        }
-
-        return InvalidCharacter(count, match.Index, out exc);
     }
 
     private static bool InvalidCharacter(int start, int end, out Exception? exc)
@@ -127,6 +117,16 @@ public static class Lexer
             lex = lex.Trim();
             return TokenType.Label;
         }
+
+        var @char = lex[0];
+
+        if (@char == ',')
+            return TokenType.Comma;    
+        
+
+        if (!Char.IsLetter(@char) && @char != '_')
+            return TokenType.InvalidToken;
+        
         return tokenType;
     }
 }

@@ -201,7 +201,7 @@ public class Parser
                 break;
             }
 
-            if (tokens[tokenIndex].Identifier == ",")
+            if (tokens[tokenIndex].Type == TokenType.Comma)
             {
                 exceptions.Add(new ArgumentException(string.Format(message, "argumento")));
                 continue;
@@ -214,7 +214,7 @@ public class Parser
                 DispatcherTypeNum,
                 DispatcherTypeString);
             @params.Add(value!);
-        } while (tokens[tokenIndex++].Identifier == ",");
+        } while (tokens[tokenIndex++].Type == TokenType.Comma);
 
         if (tokens[tokenIndex - 1].Identifier != ")")
             return ResetDefault(startIndex, out expressions, string.Format(message, ")"));

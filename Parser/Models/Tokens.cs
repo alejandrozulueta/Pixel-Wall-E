@@ -17,6 +17,8 @@ public enum TokenType
     OpenBracket,
     CloseBracket,
     EndOfLine,
+    InvalidToken,
+    Comma,
 }
 
 public class Tokens(TokenType type, string identifier, int row, int col)
