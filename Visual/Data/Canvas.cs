@@ -4,11 +4,11 @@ namespace Visual.Data
 {
     public class CanvasData
     {
-        public int Rows { get; set; } 
-        public int Cols { get; set; }
+        public uint Rows { get; set; } 
+        public uint Cols { get; set; }
         public Color[,] CellsColor { get; set; }
 
-        public CanvasData(int rows = 0, int cols = 0) 
+        public CanvasData(uint rows = 0, uint cols = 0) 
         {
             Rows = rows;
             Cols = cols;
