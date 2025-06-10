@@ -54,6 +54,7 @@
 
                         <TextBox x:Name="Lines" 
                              IsReadOnly="True"
+                             Text="1"
                              Grid.Column="0"/>
                         <TextBox x:Name="CodeEditor" 
                             Grid.Column="1" KeyDown="CodeEditor_KeyDown" Text="" TextChanged="TextChanged"

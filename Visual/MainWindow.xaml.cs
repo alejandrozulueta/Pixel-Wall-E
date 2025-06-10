@@ -56,6 +56,8 @@ namespace Visual
         {
             string code = CodeEditor.Text;
 
+            UpdateLineNumbers();
+
             if (code == "")
                 return;
 
@@ -84,6 +86,8 @@ namespace Visual
         {
             if (codeInfo is null || Errors.Text != "")
                 return;
+
+            UpdateLineNumbers();
 
             if (Keyboard.Modifiers != ModifierKeys.Control)
                 return;
@@ -124,6 +128,19 @@ namespace Visual
                 return;
             }
             DrawGrid();
+        }
+
+        private void UpdateLineNumbers()
+        {
+            int lineCount = CodeEditor.LineCount;
+
+            StringBuilder lineNumbersText = new StringBuilder();
+            for (int i = 1; i <= lineCount; i++)
+            {
+                lineNumbersText.AppendLine(i.ToString());
+            }
+
+            Lines.Text = lineNumbersText.ToString();
         }
 
         private void MainKeyControl(object sender, KeyEventArgs e)
