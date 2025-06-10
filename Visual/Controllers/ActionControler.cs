@@ -15,6 +15,8 @@ namespace Visual.Controllers
         [AttributeDefined("VisualActs")]
         public void Spawn(int x, int y)
         {
+            IsValid(x, y, _paint.Canvas.Cols, _paint.Canvas.Rows);
+
             if (_paint.Brush is not null)
                 throw new InvalidOperationException("Wall_E ya se ha iniciado");
             _paint.Brush = new BrushData(x, y);
@@ -37,28 +39,38 @@ namespace Visual.Controllers
         [AttributeDefined("VisualActs")]
         public void DrawLine(int dirX, int dirY, int distance)
         {
+            ValidDir(dirX, dirY);
+
             int startLineX = _paint.Brush!.CurrentX;
             int startLineY = _paint.Brush!.CurrentY;
 
+            int cx = startLineX + dirX * distance;
+            int cy = startLineY + dirY * distance;
+
+            IsValid(cx, cy, _paint.Canvas.Cols, _paint.Canvas.Rows);
+            
             for (int i = 0; i <= distance; i++)
             {
                 int currentCenterX = startLineX + dirX * i;
                 int currentCenterY = startLineY + dirY * i;
                 PaintPixel(_paint.Canvas!, currentCenterX, currentCenterY, _paint.Brush.CurrentColor, _paint.Brush.Size);
             }
-
-            _paint.Brush.CurrentX = startLineX + dirX * distance;
-            _paint.Brush.CurrentY = startLineY + dirY * distance;
+            _paint.Brush.CurrentX = cx; 
+            _paint.Brush.CurrentY = cy;
         }
 
         [AttributeDefined("VisualActs")]
         public void DrawCircle(int dirX, int dirY, int radius)
         {
+            ValidDir(dirX, dirY);
+
             radius += (radius + 1) % 2;
 
             int circleCenterX = _paint.Brush!.CurrentX + dirX * radius;
             int circleCenterY = _paint.Brush!.CurrentY + dirY * radius;
 
+            IsValid(circleCenterX, circleCenterY, _paint.Canvas.Cols, _paint.Canvas.Rows);
+            
             _paint.Brush!.CurrentX = circleCenterX;
             _paint.Brush!.CurrentY = circleCenterY;
 
@@ -92,8 +104,12 @@ namespace Visual.Controllers
         [AttributeDefined("VisualActs")]
         public void DrawRectangle(int dirX, int dirY, int distance, int width, int height)
         {
+            ValidDir(dirX, dirY);
+
             int rectCenterX = _paint.Brush!.CurrentX + dirX * distance;
             int rectCenterY = _paint.Brush!.CurrentY + dirY * distance;
+
+            IsValid(rectCenterX, rectCenterY, _paint.Canvas.Cols, _paint.Canvas.Rows);
 
             _paint.Brush!.CurrentX = rectCenterX;
             _paint.Brush!.CurrentY = rectCenterY;
@@ -201,6 +217,7 @@ namespace Visual.Controllers
             RecursiveFill(canvas, x, y - 1, targetColor, fillColor, size);
         }
 
+        
         public Dictionary<string, ActionInfo> GetActs()
         {
             dict = dict ?? typeof(ActionControler).GetMethods()
@@ -226,5 +243,20 @@ namespace Visual.Controllers
             return dict;
         }
 
+        private void IsValid(int x, int y, uint canvasCols, uint canvasRows) 
+        {
+            if(!(x >= 0 && x < canvasCols && y >= 0 && y < canvasRows)) 
+            { 
+                throw new InvalidOperationException("Wall_E se sale del canvas");
+            }
+        }
+
+        private void ValidDir(int x, int y)
+        {
+            if ((x != Math.Abs(1) && x != 0) || (y != Math.Abs(1) && y != 0)) 
+            { 
+                throw new InvalidOperationException("Dirección inválida, debe ser -1, 0 o 1 en cada eje");
+            }
+        }
     }
 }
