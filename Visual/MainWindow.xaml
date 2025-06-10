@@ -14,64 +14,79 @@
         <Binding Source="{StaticResource Settings}"/>
     </Window.DataContext>
 
-    <Grid Name="Main" KeyDown="MainKeyControl">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="*"/>
-            
-        </Grid.ColumnDefinitions>
+    <DockPanel>
 
-        <Canvas x:Name="DrawCanvas"
+        <Border DockPanel.Dock="Top" Background="Transparent" Visibility="Visible">
+            <Menu x:Name="Menu">
+                <MenuItem Header="_Archivo">
+                    <MenuItem Header="_Guardar" Click="SaveClick"/>
+                    <Separator/>
+                    <MenuItem Header="_Cargar" Click="LoadClick"/>
+                </MenuItem>
+                <MenuItem Header="_Redimensionar" Click="ResizeClick"/>
+            </Menu>
+
+        </Border>
+
+        <Grid Name="Main" KeyDown="MainKeyControl">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+
+            </Grid.ColumnDefinitions>
+
+            <Canvas x:Name="DrawCanvas"
                 Grid.Column="0"
                 Loaded="ResizeEvent"/>
 
-        <Grid Grid.Column="2" x:Name="RightPanelGrid" >
-            <Grid.RowDefinitions>
-                <RowDefinition Height="3*" x:Name="EditorArea"/>
-                <RowDefinition Height="Auto" x:Name="ErrorsArea"/>
-            </Grid.RowDefinitions>
+            <Grid Grid.Column="2" x:Name="RightPanelGrid" >
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="3*" x:Name="EditorArea"/>
+                    <RowDefinition Height="Auto" x:Name="ErrorsArea"/>
+                </Grid.RowDefinitions>
 
-            <ScrollViewer >
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="15*"/>
-                    </Grid.ColumnDefinitions>
+                <ScrollViewer >
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="15*"/>
+                        </Grid.ColumnDefinitions>
 
-                    <TextBox x:Name="Lines" 
+                        <TextBox x:Name="Lines" 
                              IsReadOnly="True"
                              Grid.Column="0"/>
-                    <TextBox x:Name="CodeEditor" 
+                        <TextBox x:Name="CodeEditor" 
                             Grid.Column="1" KeyDown="CodeEditor_KeyDown" Text="" TextChanged="TextChanged"
                             AcceptsReturn="True"/>
-                            
-                </Grid>
-            </ScrollViewer>
 
-            <TextBox x:Name="Errors" 
+                    </Grid>
+                </ScrollViewer>
+
+                <TextBox x:Name="Errors" 
              Grid.Row="1"
              IsReadOnly="True" VerticalScrollBarVisibility="Auto"
              Visibility="Collapsed"/>
 
-            <Popup x:Name="SuggestionPopup"
+                <Popup x:Name="SuggestionPopup"
                Placement="Custom"
                StaysOpen="False"
                AllowsTransparency="True"
                PopupAnimation="Fade">
-                
-                <Border BorderBrush="Gray" BorderThickness="1" Background="WhiteSmoke" CornerRadius="3" Padding="2">
-                    <ListBox x:Name="SuggestionListBox"
+
+                    <Border BorderBrush="Gray" BorderThickness="1" Background="WhiteSmoke" CornerRadius="3" Padding="2">
+                        <ListBox x:Name="SuggestionListBox"
                          MaxHeight="200"
                          MinWidth="150">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding}" Padding="3"/>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </Border>
-            </Popup>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" Padding="3"/>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Border>
+                </Popup>
 
+            </Grid>
         </Grid>
-    </Grid>
+    </DockPanel>
 </Window>

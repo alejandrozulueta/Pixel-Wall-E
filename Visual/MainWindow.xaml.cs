@@ -1,4 +1,8 @@
-﻿using Parser.Models;
+﻿using Microsoft.VisualBasic;
+using Microsoft.Win32;
+using Parser.Models;
+using System.IO;
+using System.Reflection;
 using System.Security.Policy;
 using System.Text;
 using System.Windows;
@@ -99,9 +103,24 @@ namespace Visual
             {
                 main.ExecuteCode(codeInfo!);
             }
+            catch(TargetInvocationException tie)
+            {
+                MessageBox.Show(
+                    tie.InnerException?.Message,
+                    "Execution Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error
+                );
+                return;
+            }
             catch (Exception ex) 
             {
-                // PopUp
+                MessageBox.Show(
+                    ex.Message,
+                    "Execution Error", 
+                    MessageBoxButton.OK,    
+                    MessageBoxImage.Error   
+                );
                 return;
             }
             DrawGrid();
@@ -158,7 +177,7 @@ namespace Visual
             }
         }
 
-        private void Resize(int rows = 20, int cols = 20)
+        private void Resize(uint rows = 20, uint cols = 20)
         {
             Canvas = new CanvasData(rows, cols);
             DrawGrid();
@@ -309,6 +328,101 @@ namespace Visual
             }
             return text[startIndex..caretIndex];
         }
+
+        private void SaveClick(object sender, RoutedEventArgs e)
+        {
+            SaveFileDialog saveFileDialog = new SaveFileDialog();
+
+            saveFileDialog.FileName = "code"; 
+            saveFileDialog.DefaultExt = ".py"; 
+            saveFileDialog.Filter = "\"Archivos de Wall_E (*.pw)|*.py|Todos los archivos (*.*)|*.*\"";
+
+            bool? resultado = saveFileDialog.ShowDialog();
+
+            if (resultado == true)
+            {
+                string rutaArchivo = saveFileDialog.FileName;
+
+                try
+                {
+                    File.WriteAllText(rutaArchivo, CodeEditor.Text);
+
+                    MessageBox.Show("¡Archivo guardado exitosamente!", "Guardado", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error al guardar el archivo: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void LoadClick(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+
+            openFileDialog.Filter = "\"Archivos de Wall_E (*.pw)|*.py|Todos los archivos (*.*)|*.*\"";
+
+            bool? resultado = openFileDialog.ShowDialog();
+
+            if (resultado == true)
+            {
+                string rutaArchivo = openFileDialog.FileName;
+
+                try
+                {
+                    string contenidoArchivo = File.ReadAllText(rutaArchivo);
+
+                    CodeEditor.Text = contenidoArchivo;
+
+                    MessageBox.Show("¡Archivo cargado exitosamente!", "Cargado", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error al cargar el archivo: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void ResizeClick(object sender, RoutedEventArgs e)
+        {
+            string inputRow_str;
+            string inputCol_str;
+            uint valueRow;
+            uint valueCol;
+
+            inputRow_str = Interaction.InputBox(
+                "Por favor, ingrese número de columnas:", 
+                "Ingresar Columnas",             
+                "0"                                 
+            );
+
+            if (string.IsNullOrEmpty(inputRow_str))
+                return;
+            
+
+            inputCol_str = Interaction.InputBox(
+                "Por favor, ingrese número de filas:", 
+                "Ingresar Filas",             
+                "0"                                   
+            );
+
+            if (string.IsNullOrEmpty(inputCol_str))
+                return;
+            
+
+            if (uint.TryParse(inputRow_str, out valueRow) && uint.TryParse(inputCol_str, out valueCol))
+            {
+                MessageBox.Show($"Has ingresado los valores:\nColumnas = {valueCol}\nFilas = {valueRow}");
+
+                Resize(valueCol, valueRow);
+            }
+            else
+            {
+                MessageBox.Show("Uno o ambos valores no son números naturales válidos.", "Error de Entrada", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+
     }
 
     public class Settings
