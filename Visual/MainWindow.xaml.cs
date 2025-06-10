@@ -52,6 +52,9 @@ namespace Visual
             SuggestionPopup.PlacementTarget = CodeEditor;
         }
 
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+            => Resize(Canvas.Cols, Canvas.Rows);
+        
         private void TextChanged(object sender, TextChangedEventArgs e)
         {
             string code = CodeEditor.Text;

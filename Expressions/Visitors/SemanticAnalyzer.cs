@@ -224,8 +224,16 @@ namespace Expressions.Visitors
             }
         }
 
-        public void LabelVisit(string label, int index) =>
+        public void LabelVisit(string label, int index)
+        {
+            if (Context.CurrentScope!.TryGetLabel(label, out int _))
+            {
+                message = $"El label {label} ya existe en el contexto acual";
+                Exceptions.Add(new InvalidOperationException(message));
+                return;
+            }
             Context.CurrentScope!.Labels[label] = index;
+        }
 
         public void BlockVisit(IInstruction[] expressions)
         {
@@ -233,6 +241,8 @@ namespace Expressions.Visitors
             SearchLabel(expressions);
             for (int i = 0; i < expressions.Length; i++)
             {
+                if (expressions[i] is LabelExpression)
+                    continue;
                 expressions[i].Accept(this);
             }
             Context.PopScope();

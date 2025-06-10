@@ -32,7 +32,7 @@ namespace Visual.Controllers
         [AttributeDefined("VisualActs")]
         public void Size(int size)
         {
-            size += (size + 1) % 2;
+            size -= (size + 1) % 2;
             _paint.Brush!.Size = size;
         }
 
