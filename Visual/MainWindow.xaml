@@ -63,11 +63,25 @@
 
                     </Grid>
                 </ScrollViewer>
+                <TabControl Name = "Tap" Grid.Row="1" Visibility="Collapsed">
 
-                <TextBox x:Name="Errors" 
-             Grid.Row="1"
+                    <TabItem Header="Errors">
+
+                        <TextBox x:Name="Errors" 
              IsReadOnly="True" VerticalScrollBarVisibility="Auto"
-             Visibility="Collapsed"/>
+             Visibility="Visible"/>
+
+                    </TabItem>
+
+                    <TabItem Header="Ouput">
+
+                        <TextBox x:Name="Ouput" 
+             IsReadOnly="True" VerticalScrollBarVisibility="Auto"
+             Visibility="Visible"/>
+
+                    </TabItem>
+
+                </TabControl>
 
                 <Popup x:Name="SuggestionPopup"
                Placement="Custom"

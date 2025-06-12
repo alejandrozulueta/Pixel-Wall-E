@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualBasic;
+﻿using Expressions.Enum;
+using Microsoft.VisualBasic;
 using Microsoft.Win32;
 using Parser.Models;
 using System.IO;
@@ -21,11 +22,12 @@ using Visual.Interfaces;
 
 namespace Visual
 {
-    public partial class MainWindow : Window, IPaint
+    public partial class MainWindow : Window, IPaint, IPrinteable
     {
         private const string SETTINGS_KEY = "Settings";
         public CanvasData Canvas { get; set; }
         public BrushData? Brush { get; set; }
+        public StringBuilder SB { get; set; } 
 
         private Settings settings;
         private FuncControler func;
@@ -42,12 +44,12 @@ namespace Visual
             settings = (Resources[SETTINGS_KEY] as Settings)!;
 
             Canvas = new CanvasData();
+            SB = new StringBuilder();
             func = new(this);
-            act = new(this);
+            act = new(this, this);
             main = new(func, act);
 
             errorsPanelHeight = new GridLength(120, GridUnitType.Pixel);
-            ShowErrorPanel();
 
             SuggestionPopup.PlacementTarget = CodeEditor;
         }
@@ -61,14 +63,12 @@ namespace Visual
 
             UpdateLineNumbers();
 
+            Errors.Text = "";
             if (code == "")
                 return;
 
             codeInfo = new CodeInfo(func.GetFuncs(), act.GetActs(), code);
-
             GetSuggest(codeInfo);
-
-            Errors.Text = "";
 
             if (!main.TryCode(codeInfo, out List<Exception>? exceptions))
             {
@@ -104,6 +104,7 @@ namespace Visual
             if (e.Key != Key.Enter)
                 return;
 
+            SB.Clear();
             Canvas = new CanvasData(Canvas.Rows, Canvas.Cols);
             Brush = null;
             try
@@ -131,6 +132,7 @@ namespace Visual
                 return;
             }
             DrawGrid();
+            Ouput.Text = SB.ToString();
         }
 
         private void UpdateLineNumbers()
@@ -205,16 +207,19 @@ namespace Visual
 
         private void ShowErrorPanel()
         {
-            if (!(Errors.Visibility == Visibility.Collapsed))
+            if (!(Tap.Visibility == Visibility.Collapsed))
                 return;
 
             EditorArea.Height = new GridLength(1, GridUnitType.Star);
             ErrorsArea.Height = errorsPanelHeight;
+
+            Tap.Visibility = Visibility.Visible;
             Errors.Visibility = Visibility.Visible;
         }
 
         public void HideErrorsPanel()
         {
+            Tap.Visibility = Visibility.Collapsed;
             Errors.Visibility = Visibility.Collapsed;
             EditorArea.Height = new GridLength(1, GridUnitType.Star);
             ErrorsArea.Height = GridLength.Auto;
@@ -351,11 +356,12 @@ namespace Visual
 
         private void SaveClick(object sender, RoutedEventArgs e)
         {
-            SaveFileDialog saveFileDialog = new SaveFileDialog();
-
-            saveFileDialog.FileName = "code"; 
-            saveFileDialog.DefaultExt = ".py"; 
-            saveFileDialog.Filter = "\"Archivos de Wall_E (*.pw)|*.py|Todos los archivos (*.*)|*.*\"";
+            SaveFileDialog saveFileDialog = new()
+            {
+                FileName = "code",
+                DefaultExt = ".pw",
+                Filter = "Archivos de Wall_E (*.pw)|*.pw|Todos los archivos (*.*)|*.*"
+            };
 
             bool? resultado = saveFileDialog.ShowDialog();
 
@@ -378,9 +384,11 @@ namespace Visual
 
         private void LoadClick(object sender, RoutedEventArgs e)
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-
-            openFileDialog.Filter = "\"Archivos de Wall_E (*.pw)|*.py|Todos los archivos (*.*)|*.*\"";
+            OpenFileDialog openFileDialog = new()
+            {
+                DefaultExt = ".pw",
+                Filter = "Archivos de Wall_E (*.pw)|*.pw|Todos los archivos (*.*)|*.*"
+            };
 
             bool? resultado = openFileDialog.ShowDialog();
 

@@ -1,9 +1,10 @@
+using Expressions.Enum;
 using Expressions.Interfaces;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Expressions.Models;
 
-public class Values(ValueType type, dynamic? value = null) : IParsable<Values>
+public class Values(ValueType type, dynamic? value = null)
 {
     public ValueType Type { get; set; } = type;
     public dynamic? Value { get; set; } = value;
@@ -60,13 +61,12 @@ public class Values(ValueType type, dynamic? value = null) : IParsable<Values>
 
     public override int GetHashCode() => Value?.GetHashCode() ?? default;
 
-    public static Values Parse(string s, IFormatProvider? provider)
+    public static bool TryParse(string? s, TokenType type, out Values? result)
     {
-        throw new NotImplementedException();
-    }
+        result = null;
+        if (type is not (TokenType.Num or TokenType.Bool or TokenType.String))
+            return false;
 
-    public static bool TryParse([NotNullWhen(true)] string? s, IFormatProvider? provider, [MaybeNullWhen(false)] out Values result)
-    {
         if (int.TryParse(s, out int num))
             result = new Values(ValueType.Double, num);
         else if (bool.TryParse(s, out bool @bool))

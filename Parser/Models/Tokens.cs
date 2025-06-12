@@ -1,31 +1,8 @@
 ﻿namespace Parser.Models;
 
-public enum TokenType
-{
-    Identifier,
-    Label,
-    Num,
-    Bool,
-    String,
-    BinaryOperator,
-    UnaryOperator,
-    AssingOperator,
-    OpenParenthesis,
-    CloseParenthesis,
-    EOS,
-    Goto,
-    OpenBracket,
-    CloseBracket,
-    EndOfLine,
-    InvalidToken,
-    Comma,
-}
-
 public class Tokens(TokenType type, string identifier, int row, int col)
 {
-    public TokenType Type => type;
+    public TokenType Type { get; set; } = type;
     public string Identifier => identifier;
-    public int Row => row;
-    public int Col => col;
-
+    public Location Location { get; private set; } = new(row, col, identifier.Length);
 }

@@ -7,9 +7,11 @@ using Visual.Interfaces;
 
 namespace Visual.Controllers
 {
-    public class ActionControler(IPaint paint)
+    public class ActionControler(IPaint paint, IPrinteable print)
     {
         IPaint _paint = paint;
+        IPrinteable _print = print;
+
         private static Dictionary<string, ActionInfo>? dict;
 
         [AttributeDefined("VisualActs")]
@@ -160,6 +162,13 @@ namespace Visual.Controllers
             int size = _paint.Brush.Size;
 
             RecursiveFill(_paint.Canvas, _paint.Brush!.CurrentY, _paint.Brush!.CurrentX, targetColor, fillColor, size);
+        }
+
+        [AttributeDefined("VisualActs")]
+        public void Print(string value) 
+        {
+            string str = value.ToString()!;
+            _print.SB.AppendLine(str);
         }
 
         private void PaintPixel(CanvasData canvas, int centerX, int centerY, Color color, int brushSize)
