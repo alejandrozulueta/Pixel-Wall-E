@@ -127,7 +127,7 @@ public class Parser
         if (tokens[tokenIndex++].Type != TokenType.OpenParenthesis)
             return ResetDefault(startIndex, out exp, string.Format(message, "(", tokens[tokenIndex - 1].Identifier));
 
-        GetExpressionType(tokens, out IExpression? @bool, DispatcherTypeBool, DispatcherTypeNum, DispatcherTypeString);
+        GetExpressionType(tokens, out IExpression? @bool);
 
         if (@bool is null)
             return ResetDefault(startIndex, out exp, string.Format(message_2, "booleano"));
@@ -159,10 +159,7 @@ public class Parser
             return ResetDefault(startIndex, out exp, string.Format(message, "asignación"), tokens[tokenIndex].Location);
 
         if (!GetExpressionType(tokens,
-            out IExpression? value,
-            DispatcherTypeBool,
-            DispatcherTypeNum,
-            DispatcherTypeString))
+            out IExpression? value))
         {
             return ResetDefault(startIndex, out exp);
         }
@@ -218,10 +215,7 @@ public class Parser
 
             GetExpressionType(
                 tokens,
-                out IExpression? value,
-                DispatcherTypeBool,
-                DispatcherTypeNum,
-                DispatcherTypeString);
+                out IExpression? value);
             @params.Add(value!);
         } while (tokens[tokenIndex++].Type == TokenType.Comma);
 
@@ -241,24 +235,14 @@ public class Parser
 
     private bool GetExpressionType(
         Tokens[] tokens,
-        out IExpression? exp,
-        params DispatcherType[] @delegates
+        out IExpression? exp
     )
     {
+        DispatcherType[] @delegates = [DispatcherTypeBool, DispatcherTypeNum, DispatcherTypeString];
         var exist = exceptions.Count;
         var startIndex = tokenIndex;
         var token = tokens[tokenIndex];
         var message = TemplatesErrors.EXPECTEDERROR_1;
-        var message_2 = TemplatesErrors.EXPECTEDERROR_2;
-
-        if (token.Type == TokenType.OpenParenthesis)
-        {
-            tokenIndex++;
-            GetExpressionType(tokens, out exp, @delegates);
-            if (tokens[tokenIndex++].Type != TokenType.CloseParenthesis)
-                return ResetDefault(startIndex, out exp, string.Format(message_2, ")", tokens[tokenIndex - 1].Identifier));
-            return true;
-        }
 
         for (int i = 0;
             !ResetDefault(startIndex, out IExpression? _) &&
@@ -285,7 +269,7 @@ public class Parser
     {
         var startIndex = tokenIndex;
         var exist = exceptions.Count;
-        if (!GetTermExpression(tokens, TokenType.String, out IExpression? termExp, DispatcherTypeString))
+        if (!GetTermExpression(tokens, TokenType.String, out IExpression? termExp, GetExpressionType))
         {
             exceptions.RemoveRange(exist, exceptions.Count - exist);
             return ResetDefault(startIndex, out exp);
@@ -307,7 +291,7 @@ public class Parser
         var exist = exceptions.Count;
         if (tokens[tokenIndex].Type == TokenType.UnaryOperator)
             return GetLUExpression(tokens, out exp, GetTNExpression, "-");
-        if (!GetTermExpression(tokens, TokenType.Num, out IExpression? termExp, DispatcherTypeNum))
+        if (!GetTermExpression(tokens, TokenType.Num, out IExpression? termExp, GetExpressionType))
         {
             exceptions.RemoveRange(exist, exceptions.Count - exist);
             return ResetDefault(startIndex, out exp);
@@ -331,7 +315,7 @@ public class Parser
         var exist = exceptions.Count;
         if (tokens[tokenIndex].Type == TokenType.UnaryOperator)
             return GetLUExpression(tokens, out exp, GetTBExpression, "!");
-        if (!GetTermExpression(tokens, TokenType.Bool, out IExpression? termExp, DispatcherTypeBool))
+        if (!GetTermExpression(tokens, TokenType.Bool, out IExpression? termExp, GetExpressionType))
         {
             exceptions.RemoveRange(exist, exceptions.Count - exist);
             return ResetDefault(startIndex, out exp);
