@@ -132,7 +132,6 @@ namespace Expressions.Visitors
                 return;
             }
 
-            var act = Context.GetAction(action);
             var @params = Context.GetOParamsInfo(action, Methods.Action);
 
             if (value.Length < @params.Length) 

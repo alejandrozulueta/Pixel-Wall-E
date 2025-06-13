@@ -143,7 +143,7 @@ namespace Visual
             for (int i = 0; i < exceptions.Count; i++)
             {
                 errors.AppendLine(exceptions[i].Message);
-                lines.AppendLine(i.ToString());
+                lines.AppendLine(exceptions[i].Location.Row.ToString());
             }
 
             Errors.Text = errors.ToString();
