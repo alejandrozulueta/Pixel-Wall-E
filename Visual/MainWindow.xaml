@@ -63,13 +63,25 @@
 
                     </Grid>
                 </ScrollViewer>
-                <TabControl Name = "Tap" Grid.Row="1" Visibility="Collapsed">
+                <TabControl Name = "Tap" Grid.Row="1" Visibility="Visible">
 
                     <TabItem Header="Errors">
-
-                        <TextBox x:Name="Errors" 
+                        <ScrollViewer>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="10*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="Errors" Grid.Column="0" 
              IsReadOnly="True" VerticalScrollBarVisibility="Auto"
              Visibility="Visible"/>
+                                <TextBox x:Name="ErrorsLine" Grid.Column="1"
+                                    IsReadOnly="True" VerticalScrollBarVisibility="Auto"
+             Visibility="Visible"/>
+
+                            </Grid>
+
+                        </ScrollViewer>
 
                     </TabItem>
 

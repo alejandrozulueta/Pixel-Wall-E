@@ -1,6 +1,7 @@
 using Expressions.Enum;
 using Parser.Enums;
-using Parser.Errors;
+using Core.Exceptions;
+using Core.Models;
 using Parser.Extensions;
 using System;
 using System.Runtime.InteropServices;
@@ -18,7 +19,7 @@ public class Parser
         out IExpression? exp
     );
 
-    private List<Exception> exceptions = [];
+    private List<ExceptionWL> exceptions = [];
 
     public static readonly Dictionary<string, OpFunc> OpFuncs = new()
     {
@@ -39,7 +40,7 @@ public class Parser
         { "<=", OpFunc.Reduce },
     };
 
-    public IInstruction Parse(Tokens[] tokens, out List<Exception> exceptions)
+    public IInstruction Parse(Tokens[] tokens, out List<ExceptionWL> exceptions)
     {
         tokenIndex = 0;
         var node = GetBlockExpression(tokens);
@@ -54,7 +55,7 @@ public class Parser
     {
         List<IInstruction> lines = [];
         var change = true;
-
+        var startToken = tokens[tokenIndex];
         while (change && tokens[tokenIndex].Type != TokenType.EOS)
         {
             var exist = exceptions.Count;
@@ -68,11 +69,11 @@ public class Parser
             else if (change = AddExc(exist) && GetGotoExpression(tokens, out exp))
                 lines.Add(exp!);
             if (!change && AddExc(exist) && tokens[tokenIndex].Type != TokenType.EndOfLine)
-                exceptions.Add(new Exception("Se esperaba una asignacion/llamada a una función"));
+                exceptions.Add(new GramaticalExceptions("Se esperaba una asignacion/llamada a una función", tokens[tokenIndex].Location));
 
             change = change || GetEmptyLine(tokens);
         }
-        return new BlockInstruction([.. lines]);
+        return new BlockInstruction([.. lines], startToken.Location + tokens[tokenIndex].Location);
     }
 
     private bool AddExc(int exist) =>
@@ -96,7 +97,7 @@ public class Parser
         var startIndex = tokenIndex;
         if (tokens[tokenIndex++].Type != TokenType.Label)
             return ResetDefault(startIndex, out exp);
-        var node = new LabelExpression(name, index);
+        var node = new LabelExpression(name, index, tokens[tokenIndex].Location);
         return GetDefault(node, out exp);
     }
 
@@ -110,32 +111,33 @@ public class Parser
         if (tokens[tokenIndex++].Type != TokenType.Goto)
             return ResetDefault(startIndex, out exp);
         if (tokens[tokenIndex++].Type != TokenType.OpenBracket)
-            return ResetDefault(startIndex, out exp, string.Format(message, '[', tokens[tokenIndex - 1].Identifier));
+            return ResetDefault(startIndex, out exp, string.Format(message, '[', tokens[tokenIndex - 1].Identifier), tokens[tokenIndex].Location);
         var labelName = tokens[tokenIndex].Identifier;
         if (tokens[tokenIndex++].Type != TokenType.Identifier)
-            return ResetDefault(startIndex, out exp, string.Format(message, "Indentificador", tokens[tokenIndex - 1].Identifier));
+            return ResetDefault(startIndex, out exp, string.Format(message, "Indentificador", tokens[tokenIndex - 1].Identifier), tokens[tokenIndex].Location);
         if (tokens[tokenIndex++].Type != TokenType.CloseBracket)
-            return ResetDefault(startIndex, out exp, string.Format(message, "]", tokens[tokenIndex - 1].Identifier));
+            return ResetDefault(startIndex, out exp, string.Format(message, "]", tokens[tokenIndex - 1].Identifier), tokens[tokenIndex].Location);
 
         if (tokens[tokenIndex].Type == TokenType.EndOfLine)
         {
             tokenIndex++;
-            node = new GotoExpression(labelName, new ValueExpression(new Values(ValueType.Bool, true)));
+            node = new GotoExpression(labelName, new ValueExpression(new Values(ValueType.Bool, true), tokens[tokenIndex].Location), 
+                tokens[startIndex].Location + tokens[tokenIndex].Location);
             return GetDefault(node, out exp);
         }
 
         if (tokens[tokenIndex++].Type != TokenType.OpenParenthesis)
-            return ResetDefault(startIndex, out exp, string.Format(message, "(", tokens[tokenIndex - 1].Identifier));
+            return ResetDefault(startIndex, out exp, string.Format(message, "(", tokens[tokenIndex - 1].Identifier), tokens[tokenIndex].Location);
 
         GetExpressionType(tokens, out IExpression? @bool);
 
         if (@bool is null)
-            return ResetDefault(startIndex, out exp, string.Format(message_2, "booleano"));
+            return ResetDefault(startIndex, out exp, string.Format(message_2, "booleano"), tokens[tokenIndex].Location);
         if (tokens[tokenIndex++].Type != TokenType.CloseParenthesis)
-            return ResetDefault(startIndex, out exp, string.Format(message, ")", tokens[tokenIndex - 1].Identifier));
+            return ResetDefault(startIndex, out exp, string.Format(message, ")", tokens[tokenIndex - 1].Identifier), tokens[tokenIndex].Location);
         if (tokens[tokenIndex++].Type != TokenType.EndOfLine)
-            return ResetDefault(startIndex, out exp, string.Format(message_2, "cambio de línea"));
-        node = new GotoExpression(labelName, @bool!);
+            return ResetDefault(startIndex, out exp, string.Format(message_2, "cambio de línea"), tokens[tokenIndex].Location);
+        node = new GotoExpression(labelName, @bool!, tokens[startIndex].Location + tokens[tokenIndex].Location);
         return GetDefault(node, out exp);
     }
 
@@ -165,8 +167,8 @@ public class Parser
         }
 
         if (tokens[tokenIndex++].Type != TokenType.EndOfLine && AddExc(exist))
-            return ResetDefault(startIndex, out exp, string.Format(message, "cambio de línea"));
-        return AssingDefault(tokens[startIndex].Identifier, value, out exp);
+            return ResetDefault(startIndex, out exp, string.Format(message, "cambio de línea"), tokens[tokenIndex].Location);
+        return AssingDefault(tokens[startIndex], value, out exp);
     }
 
     private bool GetCallFunction(Tokens[] tokens, out IInstruction? exp)
@@ -179,15 +181,15 @@ public class Parser
             return ResetDefault(startIndex, out exp);
 
         if (tokens[tokenIndex++].Type != TokenType.EndOfLine && AddExc(exist))
-            return ResetDefault(startIndex, out exp, string.Format(message, "cambio de línea"));
-        return ActionDefault(tokens[startIndex].Identifier, expressions!, out exp);
+            return ResetDefault(startIndex, out exp, string.Format(message, "cambio de línea"), tokens[tokenIndex].Location);
+        return ActionDefault(tokens[startIndex], expressions!, out exp);
     }
 
     private bool GetCallFunction(Tokens[] tokens, out IExpression? exp)
     {
         if (!CheckFunction(tokens, out IExpression[]? expressions))
             return ResetDefault(tokenIndex, out exp);
-        return FunctDefault(tokens[tokenIndex++].Identifier, expressions!, out exp);
+        return FunctDefault(tokens[tokenIndex++], expressions!, out exp);
     }
     private bool CheckFunction(Tokens[] tokens, out IExpression[]? expressions)
     {
@@ -198,7 +200,7 @@ public class Parser
         if (tokens[tokenIndex++].Type != TokenType.Identifier)
             return ResetDefault(startIndex, out expressions);
         if (tokens[tokenIndex++].Type != TokenType.OpenParenthesis)
-            return ResetDefault(startIndex, out expressions, string.Format(message_2, "( o <-", tokens[tokenIndex - 1].Identifier));
+            return ResetDefault(startIndex, out expressions, string.Format(message_2, "( o <-", tokens[tokenIndex - 1].Identifier), tokens[tokenIndex - 1].Location);
         do
         {
             if (tokens[tokenIndex].Type == TokenType.CloseParenthesis)
@@ -209,7 +211,7 @@ public class Parser
 
             if (tokens[tokenIndex].Type == TokenType.Comma)
             {
-                exceptions.Add(new ArgumentException(string.Format(message, "argumento")));
+                exceptions.Add(new GramaticalExceptions(string.Format(message, "argumento"), tokens[tokenIndex].Location));
                 continue;
             }
 
@@ -220,7 +222,7 @@ public class Parser
         } while (tokens[tokenIndex++].Type == TokenType.Comma);
 
         if (tokens[tokenIndex - 1].Identifier != ")")
-            return ResetDefault(startIndex, out expressions, string.Format(message, ")"));
+            return ResetDefault(startIndex, out expressions, string.Format(message, ")"), tokens[tokenIndex].Location);
         return GetDefault([.. @params], out expressions);
     }
 
@@ -264,7 +266,7 @@ public class Parser
         Location? loc = AddExc(exist) ? token.Location : null;
         return ResetDefault(startIndex, out exp, name, loc);
     }
-    
+
     private bool DispatcherTypeString(Tokens[] tokens, out IExpression? exp)
     {
         var startIndex = tokenIndex;
@@ -405,7 +407,7 @@ public class Parser
         if (DispatcherTypeNum(tokens, out exp))
             return true;
         tokenIndex = startIndex;
-        return ResetDefault(startIndex, out exp, string.Format(message, "dos literales para comparar"));
+        return ResetDefault(startIndex, out exp, string.Format(message, "dos literales para comparar"), tokens[startIndex].Location + tokens[tokenIndex].Location);
     }
 
     private bool GetNotExpressions(Tokens[] tokens, out IExpression? exp)
@@ -480,7 +482,7 @@ public class Parser
     {
         if (!GetExpression(tokens, out IExpression? right, getSubExpressions, @params))
             return ResetDefault(tokenIndex, out exp);
-        var node = new BinaryExpression(left, right!, op.GetBinaryType());
+        var node = new BinaryExpression(left, right!, op.GetBinaryType(), left.Location + right!.Location);
         return GetDefault(node, out exp);
     }
 
@@ -495,26 +497,11 @@ public class Parser
     {
         if (!getSubExpressions.Invoke(tokens, out IExpression? right))
             return ResetDefault(tokenIndex, out exp);
-        var node = new BinaryExpression(left, right!, op.GetBinaryType());
+        var node = new BinaryExpression(left, right!, op.GetBinaryType(), left.Location + right!.Location);
         if (!ConstructExpression(tokens, node, out exp, getSubExpressions, @params))
             return GetDefault(node, out exp);
         return true;
     }
-
-    // private bool GetRUExpression(
-    //     Tokens[] tokens,
-    //     out IExpression? exp,
-    //     GetDelegateExpressions getExpressions,
-    //     params string[] @params
-    // )
-    // {
-    //     var startIndex = tokenIndex;
-    //     if (!getExpressions(tokens, out IExpression? value))
-    //         return ResetDefault(startIndex, out exp);
-    //     if (!GetRUExpressions(tokens, value!, out exp, @params))
-    //         return GetDefault(value!, out exp);
-    //     return true;
-    // }
 
     private bool GetLUExpression(
         Tokens[] tokens,
@@ -533,7 +520,7 @@ public class Parser
         if (!getExpressions(tokens, out exp))
             return ResetDefault(startIndex, out exp);
         IExpression? node = operators.Aggregate(exp!, (agg, str)
-            => new UnaryExpression(agg!, str!.GetUnaryType()));
+            => new UnaryExpression(agg!, str!.GetUnaryType(), agg!.Location));
         return GetDefault(node, out exp);
     }
 
@@ -548,16 +535,16 @@ public class Parser
         var token = tokens[tokenIndex++];
         var message = TemplatesErrors.EXPECTEDERROR_2;
         if (Values.TryParse(token.Identifier, token.Type, out Values? value))
-            return GetDefault(new ValueExpression(value!), out termExp);
+            return GetDefault(new ValueExpression(value!, token.Location), out termExp);
         if (GetCallFunction(tokens, out IExpression? function))
             return GetDefault(function, out termExp);
         if (token.Type == TokenType.Identifier)
-            return GetDefault(new VariableExpression(token.Identifier), out termExp);
+            return GetDefault(new VariableExpression(token.Identifier, token.Location), out termExp);
         if (token.Type == TokenType.OpenParenthesis)
         {
             getExpressions(tokens, out termExp);
             if (tokens[tokenIndex++].Type != TokenType.CloseParenthesis)
-                return ResetDefault(startIndex, out termExp, string.Format(message, ")", tokens[tokenIndex - 1].Identifier));
+                return ResetDefault(startIndex, out termExp, string.Format(message, ")", tokens[tokenIndex - 1].Identifier), tokens[tokenIndex].Location);
             return true;
         }
         return ResetDefault(startIndex, out termExp, string.Format(message, type, token.Type));
@@ -572,46 +559,45 @@ public class Parser
         return GetDefault(identifier, out op);
     }
 
-    private bool AssingDefault(string name, IExpression? value, out IInstruction? exp)
+    private bool AssingDefault(Tokens name, IExpression? value, out IInstruction? exp)
     {
-        exp = new Assign(name, value!);
+        exp = new Assign(name.Identifier, value!, name.Location);
         return true;
     }
 
-    private bool ActionDefault(string action, IExpression?[] values, out IInstruction? exp)
+    private bool ActionDefault(Tokens action, IExpression?[] values, out IInstruction? exp)
     {
-        exp = new ActionInstruction(action, values!);
+        exp = new ActionInstruction(action.Identifier, values!, action.Location);
         return true;
     }
 
-    private bool FunctDefault(string name, IExpression?[] values, out IExpression? exp)
+    private bool FunctDefault(Tokens name, IExpression?[] values, out IExpression? exp)
     {
-        exp = new FuncExpresion(name, values!);
+        exp = new FuncExpresion(name.Identifier, values!, name.Location);
         return true;
     }
 
     private bool GetDefault<T>(T value, out T exp, string? name = null, Location? location = null)
     {
-        if (!string.IsNullOrEmpty(name))
-            exceptions.Add(new GramaticalExceptions(name, location));
+        if (location is Location nonNullLocation)
+        {
+            if (!string.IsNullOrEmpty(name))
+                exceptions.Add(new GramaticalExceptions(name, nonNullLocation));
+        }
+
         exp = value;
         return true;
     }
 
     private bool ResetDefault<T>(int index, out T? exp, string? name = null, Location? location = null)
     {
-        if (!string.IsNullOrEmpty(name))
-            exceptions.Add(new GramaticalExceptions(name, location));
+        if (location is Location nonNullLocation) 
+        { 
+            if (!string.IsNullOrEmpty(name))
+                exceptions.Add(new GramaticalExceptions(name, nonNullLocation));
+        }
         tokenIndex = index;
         exp = default;
-        return false;
-    }
-
-    private bool ResetDefault<T1, T2>(int index, out T1? exp1, out T2? exp2)
-    {
-        tokenIndex = index;
-        exp1 = default;
-        exp2 = default;
         return false;
     }
 

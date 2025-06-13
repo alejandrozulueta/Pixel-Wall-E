@@ -1,19 +1,20 @@
 using Expressions.Interfaces;
+using Core.Models;
 
 namespace Expressions.Models;
 
-public class FuncExpresion(string func, IExpression[] @params) : Expression
+public class FuncExpresion(string func, IExpression[] @params, Location location) : Expression(location)
 {
     public override Values Accept(IExpressionsVisitor visitor) =>
-        visitor.FuncVisit(func, [.. @params.Select(x => x.Accept(visitor))]);
+        visitor.FuncVisit(func, [.. @params.Select(x => x.Accept(visitor))], Location);
 }
 
-public class ValueExpression(Values value) : Expression, IExpression
+public class ValueExpression(Values value, Location location) : Expression(location), IExpression
 {
     public override Values Accept(IExpressionsVisitor visitor) => visitor.ValueVisit(value);
 }
 
-public class VariableExpression(string name) : Expression, IExpression
+public class VariableExpression(string name, Location location) : Expression(location), IExpression
 {
-    public override Values Accept(IExpressionsVisitor visitor) => visitor.VariableVisit(name);
+    public override Values Accept(IExpressionsVisitor visitor) => visitor.VariableVisit(name, Location);
 }

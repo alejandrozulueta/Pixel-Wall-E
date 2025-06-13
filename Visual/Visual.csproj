@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Core\Core.csproj" />
     <ProjectReference Include="..\Expressions\Expressions.csproj" />
     <ProjectReference Include="..\Parser\Parser.csproj" />
   </ItemGroup>

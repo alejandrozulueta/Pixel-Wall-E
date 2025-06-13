@@ -1,4 +1,6 @@
-﻿namespace Parser.Models;
+﻿using Core.Models;
+
+namespace Parser.Models;
 
 public class Tokens(TokenType type, string identifier, int row, int col)
 {

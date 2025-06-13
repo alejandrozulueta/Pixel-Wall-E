@@ -1,4 +1,6 @@
-﻿using Expressions.Enum;
+﻿using Core.Exceptions;
+using Core.Models;
+using Expressions.Enum;
 using Expressions.Extensions;
 using Expressions.Interfaces;
 using Expressions.Models;
@@ -14,12 +16,12 @@ namespace Expressions.Visitors
 {
     public class SemanticAnalyzer(Context Context) : IExpressionsVisitor
     {
-        List<Exception> Exceptions = [];
+        List<ExceptionWL> Exceptions = [];
         private string? message;
 
         public void Visit(IInstruction node) => node.Accept(this);
 
-        public Values BinaryVisit(Values operand1, Values operand2, BinaryTypes opType) 
+        public Values BinaryVisit(Values operand1, Values operand2, BinaryTypes opType, Location location) 
         {
             
             if(operand1.Type == ValueType.InvalidType || operand2.Type == ValueType.InvalidType) 
@@ -30,7 +32,7 @@ namespace Expressions.Visitors
             if(operand1.Type != operand2.Type) 
             {
                 message = $"Operación no válida entre {operand1.Type} y {operand2.Type}";
-                Exceptions.Add(new InvalidOperationException(message));
+                Exceptions.Add(new SemanticException(message, location));
                 return new Values(ValueType.InvalidType);
             }
 
@@ -42,7 +44,7 @@ namespace Expressions.Visitors
                 case BinaryTypes.Modul or BinaryTypes.Pow:
                     if(operand1.Type is not ValueType.Double) 
                     {
-                        Exceptions.Add(new InvalidOperationException(message));
+                        Exceptions.Add(new SemanticException(message, location));
                         return new Values(ValueType.InvalidType);
                     }
 
@@ -51,7 +53,7 @@ namespace Expressions.Visitors
                 case BinaryTypes.And or BinaryTypes.Or:
                     if(operand1.Type is not ValueType.Bool) 
                     {
-                        Exceptions.Add(new InvalidOperationException(message));
+                        Exceptions.Add(new SemanticException(message, location));
                         return new Values(ValueType.InvalidType);
                     }
 
@@ -63,7 +65,7 @@ namespace Expressions.Visitors
                 case BinaryTypes.Less or BinaryTypes.Greater or BinaryTypes.LessEqual or BinaryTypes.GreaterEqual:
                     if(operand1.Type is not ValueType.Double) 
                     {
-                        Exceptions.Add(new InvalidOperationException(message));
+                        Exceptions.Add(new SemanticException(message, location));
                         return new Values(ValueType.InvalidType);
                     }
 
@@ -75,16 +77,16 @@ namespace Expressions.Visitors
 
         }
 
-        public Values UnaryVisit(Values operand, UnaryTypes opType)
+        public Values UnaryVisit(Values operand, UnaryTypes opType, Location location)
         {
             message = $"Operación {opType} no válida con {operand.Type}";
 
             switch (opType) 
             { 
                 case UnaryTypes.Not:
-                    if (operand.Type is not ValueType.Bool) 
-                    { 
-                        Exceptions.Add(new InvalidOperationException (message));
+                    if (operand.Type is not ValueType.Bool)
+                    {
+                        Exceptions.Add(new SemanticException(message, location));
                         return new Values(ValueType.InvalidType);
                     }
 
@@ -93,7 +95,7 @@ namespace Expressions.Visitors
                 case UnaryTypes.Neg:
                     if (operand.Type is not ValueType.Double)
                     {
-                        Exceptions.Add(new InvalidOperationException(message));
+                        Exceptions.Add(new SemanticException(message, location));
                         return new Values(ValueType.InvalidType);
                     }
 
@@ -109,24 +111,24 @@ namespace Expressions.Visitors
         public void AssingVisit(string name, Values value) =>
              Context.CurrentScope!.Variables[name] = value;
 
-        public Values VariableVisit(string name)
+        public Values VariableVisit(string name, Location location)
         {
             if(!Context.CurrentScope!.TryGetVariable(name, out Values? value)) 
             {
                 message = $"El nombre {name} no existe en el contexto actual";
-                Exceptions.Add (new InvalidOperationException (message));
+                Exceptions.Add (new SemanticException(message, location));
                 return new Values(ValueType.InvalidType);
             }
 
             return new Values(value!.Type, value);
         }
 
-        public void ActionVisit(string action, Values[] value) 
+        public void ActionVisit(string action, Values[] value, Location location) 
         {
             if (!Context.Actions.TryGetValue(action, out ActionInfo? _) || Context.Functions.TryGetValue(action, out FuncInfo? _))
             {
                 message = $"Método {action} no implementado";
-                Exceptions.Add(new NotImplementedException(message));
+                Exceptions.Add(new SemanticException(message, location));
                 return;
             }
 
@@ -137,14 +139,14 @@ namespace Expressions.Visitors
             { 
                 var param = @params[value.Length].Name;
                 message = $"No se ha introducido el parámetro {param}";
-                Exceptions.Add(new InvalidOperationException(message));
+                Exceptions.Add(new SemanticException(message, location));
                 return;
             }
 
             if(value.Length > @params.Length) 
             {
                 message = $"El método {action} no recibe {value.Length} parámetros";
-                Exceptions.Add(new InvalidOperationException(message));
+                Exceptions.Add(new SemanticException(message, location));
                 return;
             }
 
@@ -155,13 +157,13 @@ namespace Expressions.Visitors
                 if (paramType != valueType) 
                 {
                     message = $"Se esperaba un tipo {paramType} y se ha introducido un tipo {valueType}";
-                    Exceptions.Add(new InvalidOperationException(message));
+                    Exceptions.Add(new SemanticException(message, location));
                     return;
                 }
             }
         } 
 
-        public Values FuncVisit(string func, Values[] value) 
+        public Values FuncVisit(string func, Values[] value, Location location) 
         {
             Func<Values[], Values> funcDef;
 
@@ -170,7 +172,7 @@ namespace Expressions.Visitors
                 funcDef = Context.GetFunction(func);
             }
 
-            catch (NotImplementedException e)
+            catch (SemanticException e)
             {
                 Exceptions.Add(e);
                 return new Values(ValueType.InvalidType);
@@ -190,7 +192,7 @@ namespace Expressions.Visitors
             if (value.Length > @params.Length)
             {
                 message = $"El método {funcDef} no recibe {value.Length} parámetros";
-                Exceptions.Add(new InvalidOperationException(message));
+                Exceptions.Add(new SemanticException(message, location));
                 return new Values(returnType);
             }
 
@@ -201,7 +203,7 @@ namespace Expressions.Visitors
                 if (paramType != valueType)
                 {
                     message = $"Se esperaba un tipo {paramType} y se ha introducido un tipo {valueType}";
-                    Exceptions.Add(new InvalidOperationException(message));
+                    Exceptions.Add(new SemanticException(message, location));
                     return new Values(returnType);
                 }
             }
@@ -209,27 +211,27 @@ namespace Expressions.Visitors
             return new Values(returnType);
         }
 
-        public void GotoVisit(string label, Values cond) 
+        public void GotoVisit(string label, Values cond, Location location) 
         {
             if (!Context.CurrentScope!.TryGetLabel(label, out int _))
             {
                 message = $"La etiqueta {label} no existe en el contexto actual";
-                Exceptions.Add(new InvalidOperationException(message));
+                Exceptions.Add(new SemanticException(message, location));
             }
 
             if (cond.Type != ValueType.Bool && cond.Type != ValueType.InvalidType)
             {
                 message = $"Se esperaba un booleano";
-                Exceptions.Add(new InvalidOperationException(message));
+                Exceptions.Add(new SemanticException(message, location));
             }
         }
 
-        public void LabelVisit(string label, int index)
+        public void LabelVisit(string label, int index, Location location)
         {
             if (Context.CurrentScope!.TryGetLabel(label, out int _))
             {
                 message = $"El label {label} ya existe en el contexto acual";
-                Exceptions.Add(new InvalidOperationException(message));
+                Exceptions.Add(new SemanticException(message, location));
                 return;
             }
             Context.CurrentScope!.Labels[label] = index;
@@ -258,7 +260,7 @@ namespace Expressions.Visitors
             }
         }
 
-        public bool GetExceptions(out List<Exception>? exceptions) 
+        public bool GetExceptions(out List<ExceptionWL>? exceptions) 
         { 
             if(Exceptions.Count > 0) 
             {

@@ -1,3 +1,5 @@
+using Core.Exceptions;
+using Core.Models;
 using System;
 using System.Data;
 using System.Text.RegularExpressions;
@@ -6,7 +8,7 @@ namespace Parser.Models;
 
 public static class Lexer
 {
-    public static Tokens[] Tokenizer(string input, out List<Exception> exceptions)
+    public static Tokens[] Tokenizer(string input, out List<ExceptionWL> exceptions)
     {
         Regex regex = new(
             @"[a-zA-Z_][a-zA-Z0-9_]*[\t ]*\r\n"
@@ -28,7 +30,7 @@ public static class Lexer
         exceptions = [];
         int count = 0;
         int column = 0;
-        int line = 0;
+        int line = 1;
         foreach (var match in regex.Matches(input).Cast<Match>())
         {
             var lex = match.Value;
@@ -49,12 +51,12 @@ public static class Lexer
 
                 if (tokenType == TokenType.InvalidToken)
                 {
-                    exceptions.Add(new SyntaxErrorException("Carácter inválido"));
+                    exceptions.Add(new SyntaxException("Carácter inválido", new Location(line, column, lex.Length)));
                     continue;
                 }
                 if (tokenType == TokenType.InvalidStringToken)
                 {
-                    exceptions.Add(new SyntaxErrorException("Se espera un cierre de comillas"));
+                    exceptions.Add(new SyntaxException("Se espera un cierre de comillas", new Location(line, column, lex.Length)));
                     continue;
                 }
                 tokens.Add(new Tokens(tokenType, lex, line, column));

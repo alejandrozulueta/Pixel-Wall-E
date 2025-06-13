@@ -1,3 +1,4 @@
+using Core.Models;
 using Expressions.Interfaces;
 using Expressions.Models;
 
@@ -10,7 +11,7 @@ public class Execute(Context Context) : IExpressionsVisitor
 
     public void Visit(IInstruction node) => node.Accept(this);
 
-    public Values BinaryVisit(Values operand1, Values operand2, BinaryTypes opType) =>
+    public Values BinaryVisit(Values operand1, Values operand2, BinaryTypes opType, Location location) =>
         opType switch
         {
             BinaryTypes.Sum => operand1 + operand2,
@@ -30,7 +31,7 @@ public class Execute(Context Context) : IExpressionsVisitor
             _ => throw new NotImplementedException(),
         };
 
-    public Values UnaryVisit(Values operand, UnaryTypes opType)
+    public Values UnaryVisit(Values operand, UnaryTypes opType, Location location)
     {
         return opType switch
         {
@@ -45,19 +46,19 @@ public class Execute(Context Context) : IExpressionsVisitor
     public void AssingVisit(string name, Values value) =>
         Context.CurrentScope!.Variables[name] = value;
 
-    public Values VariableVisit(string name) =>
+    public Values VariableVisit(string name, Location location) =>
         Context.CurrentScope!.TryGetVariable(name, out Values? value)
             ? value!
             : throw new Exception();
 
-    public void ActionVisit(string action, Values[] value) => Context.GetAction(action)(value);
+    public void ActionVisit(string action, Values[] value, Location location) => Context.GetAction(action)(value);
 
-    public Values FuncVisit(string func, Values[] value) => Context.GetFunction(func)(value);
+    public Values FuncVisit(string func, Values[] value, Location location) => Context.GetFunction(func)(value);
 
-    public void GotoVisit(string label, Values cond) =>
+    public void GotoVisit(string label, Values cond, Location location) =>
         targetLabel = (gotoFlag = cond.Value ?? false) ? label : null;
 
-    public void LabelVisit(string label, int index) => Context.CurrentScope!.Labels[label] = index;
+    public void LabelVisit(string label, int index, Location location) => Context.CurrentScope!.Labels[label] = index;
 
     public void BlockVisit(IInstruction[] expressions)
     {

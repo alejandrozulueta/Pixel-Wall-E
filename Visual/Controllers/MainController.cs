@@ -1,5 +1,6 @@
 ﻿using Expressions.Models;
 using Expressions.Visitors;
+using Core.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,7 +34,7 @@ namespace Visual.Controllers
             info.Node.Accept(visit);
         }
 
-        public bool TryCode(CodeInfo info, out List<Exception>? exceptions) 
+        public bool TryCode(CodeInfo info, out List<ExceptionWL>? exceptions) 
         {
             if (info.Exceptions.Count != 0)
             {

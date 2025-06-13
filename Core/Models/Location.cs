@@ -1,4 +1,4 @@
-namespace Parser.Models;
+namespace Core.Models;
 
 public record struct Location
 {

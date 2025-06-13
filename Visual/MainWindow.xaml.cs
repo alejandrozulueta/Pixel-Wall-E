@@ -1,7 +1,9 @@
-﻿using Expressions.Enum;
+﻿using Core.Exceptions;
+using Expressions.Enum;
 using Microsoft.VisualBasic;
 using Microsoft.Win32;
 using Parser.Models;
+using System;
 using System.IO;
 using System.Reflection;
 using System.Security.Policy;
@@ -27,7 +29,7 @@ namespace Visual
         private const string SETTINGS_KEY = "Settings";
         public CanvasData Canvas { get; set; }
         public BrushData? Brush { get; set; }
-        public StringBuilder SB { get; set; } 
+        public StringBuilder SB { get; set; }
 
         private Settings settings;
         private FuncControler func;
@@ -56,7 +58,7 @@ namespace Visual
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
             => Resize(Canvas.Cols, Canvas.Rows);
-        
+
         private void TextChanged(object sender, TextChangedEventArgs e)
         {
             string code = CodeEditor.Text;
@@ -64,16 +66,18 @@ namespace Visual
             UpdateLineNumbers();
 
             Errors.Text = "";
+            ErrorsLine.Text = "";
             if (code == "")
                 return;
 
             codeInfo = new CodeInfo(func.GetFuncs(), act.GetActs(), code);
             GetSuggest(codeInfo);
 
-            if (!main.TryCode(codeInfo, out List<Exception>? exceptions))
+            if (!main.TryCode(codeInfo, out List<ExceptionWL>? exceptions))
             {
-                StringBuilder sb = new();
 
+                StringBuilder sb = new();
+                UpdateErrors(exceptions!);
                 foreach (var error in exceptions!)
                 {
                     sb.AppendLine(error.Message);
@@ -82,9 +86,6 @@ namespace Visual
             }
         }
 
-        private void ResizeEvent(object sender, RoutedEventArgs e) =>
-            Resize();
-        
         private void CodeEditor_KeyDown(object sender, KeyEventArgs e)
         {
             if (codeInfo is null || Errors.Text != "")
@@ -111,7 +112,7 @@ namespace Visual
             {
                 main.ExecuteCode(codeInfo!);
             }
-            catch(TargetInvocationException tie)
+            catch (TargetInvocationException tie)
             {
                 MessageBox.Show(
                     tie.InnerException?.Message,
@@ -121,18 +122,32 @@ namespace Visual
                 );
                 return;
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 MessageBox.Show(
                     ex.Message,
-                    "Execution Error", 
-                    MessageBoxButton.OK,    
-                    MessageBoxImage.Error   
+                    "Execution Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error
                 );
                 return;
             }
             DrawGrid();
             Ouput.Text = SB.ToString();
+        }
+
+        private void UpdateErrors(List<ExceptionWL> exceptions)
+        {
+            StringBuilder errors = new StringBuilder();
+            StringBuilder lines = new StringBuilder();
+            for (int i = 0; i < exceptions.Count; i++)
+            {
+                errors.AppendLine(exceptions[i].Message);
+                lines.AppendLine(i.ToString());
+            }
+
+            Errors.Text = errors.ToString();
+            ErrorsLine.Text = lines.ToString();
         }
 
         private void UpdateLineNumbers()
@@ -198,6 +213,9 @@ namespace Visual
                 }
             }
         }
+
+        private void ResizeEvent(object sender, RoutedEventArgs e) 
+            => Resize();
 
         private void Resize(uint rows = 20, uint cols = 20)
         {
@@ -326,7 +344,6 @@ namespace Visual
             };
         }
 
-
         private string GetWord(string text, int caretIndex)
         {
             int startIndex = caretIndex - 1;
@@ -419,24 +436,24 @@ namespace Visual
             uint valueCol;
 
             inputRow_str = Interaction.InputBox(
-                "Por favor, ingrese número de columnas:", 
-                "Ingresar Columnas",             
-                "0"                                 
+                "Por favor, ingrese número de columnas:",
+                "Ingresar Columnas",
+                "0"
             );
 
             if (string.IsNullOrEmpty(inputRow_str))
                 return;
-            
+
 
             inputCol_str = Interaction.InputBox(
-                "Por favor, ingrese número de filas:", 
-                "Ingresar Filas",             
-                "0"                                   
+                "Por favor, ingrese número de filas:",
+                "Ingresar Filas",
+                "0"
             );
 
             if (string.IsNullOrEmpty(inputCol_str))
                 return;
-            
+
 
             if (uint.TryParse(inputRow_str, out valueRow) && uint.TryParse(inputCol_str, out valueCol))
             {
@@ -449,8 +466,6 @@ namespace Visual
                 MessageBox.Show("Uno o ambos valores no son números naturales válidos.", "Error de Entrada", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
-
     }
 
     public class Settings
