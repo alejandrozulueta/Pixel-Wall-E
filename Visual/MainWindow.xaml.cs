@@ -49,7 +49,7 @@ namespace Visual
         }
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
-            => Resize(Canvas.Cols, Canvas.Rows);
+            => Resize(Canvas.Dimension);
 
         private void TextChanged(object sender, TextChangedEventArgs e)
         {
@@ -188,35 +188,22 @@ namespace Visual
 
         private void ResizeClick(object sender, RoutedEventArgs e)
         {
-            string inputRow_str;
-            string inputCol_str;
+            string inputDim_str;
 
-            inputRow_str = Interaction.InputBox(
-                "Por favor, ingrese número de columnas:",
-                "Ingresar Columnas",
+            inputDim_str = Interaction.InputBox(
+                "Por favor, ingrese la dimensión:",
+                "Ingresar Dimensiión",
                 "0"
             );
 
-            if (string.IsNullOrEmpty(inputRow_str))
+            if (string.IsNullOrEmpty(inputDim_str))
                 return;
 
-
-            inputCol_str = Interaction.InputBox(
-                "Por favor, ingrese número de filas:",
-                "Ingresar Filas",
-                "0"
-            );
-
-            if (string.IsNullOrEmpty(inputCol_str))
-                return;
-
-
-            if (int.TryParse(inputRow_str, out int valueRow) && int.TryParse(inputCol_str, out int valueCol)
-                && valueRow >= 0 && valueCol >= 0)
+            if (int.TryParse(inputDim_str, out int valueDim) && valueDim >= 0)
             {
-                MessageBox.Show($"Has ingresado los valores:\nColumnas = {valueCol}\nFilas = {valueRow}");
+                MessageBox.Show($"Has ingresado el valor:\nDimensión = {valueDim}");
 
-                Resize(valueCol, valueRow);
+                Resize(valueDim);
             }
             else
             {

@@ -4,20 +4,18 @@ namespace Visual.Data
 {
     public class CanvasData
     {
-        public int Rows { get; set; } 
-        public int Cols { get; set; }
+        public int Dimension { get; set; }
         public Color[,] CellsColor { get; set; }
 
-        public CanvasData(int rows = 0, int cols = 0) 
+        public CanvasData(int dimension = 0) 
         {
-            Rows = rows;
-            Cols = cols;
+            Dimension = dimension;
         
-            CellsColor = new Color[Rows, Cols];
+            CellsColor = new Color[Dimension, Dimension];
 
-            for (int i = 0; i < Rows; i++)
+            for (int i = 0; i < Dimension; i++)
             {
-                for (int j = 0; j < Cols; j++)
+                for (int j = 0; j < Dimension; j++)
                 {
                     CellsColor[i, j] = Color.Transparent;
                 }

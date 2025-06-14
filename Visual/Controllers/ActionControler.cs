@@ -17,7 +17,7 @@ namespace Visual.Controllers
         [AttributeDefined("VisualActs")]
         public void Spawn(int x, int y)
         {
-            IsValid(x, y, _paint.Canvas.Cols, _paint.Canvas.Rows);
+            IsValid(x, y, _paint.Canvas.Dimension);
 
             if (_paint.Brush is not null)
                 throw new InvalidOperationException("Wall_E ya se ha iniciado");
@@ -49,7 +49,7 @@ namespace Visual.Controllers
             int cx = startLineX + dirX * distance;
             int cy = startLineY + dirY * distance;
 
-            IsValid(cx, cy, _paint.Canvas.Cols, _paint.Canvas.Rows);
+            IsValid(cx, cy, _paint.Canvas.Dimension);
             
             for (int i = 0; i <= distance; i++)
             {
@@ -71,7 +71,7 @@ namespace Visual.Controllers
             int circleCenterX = _paint.Brush!.CurrentX + dirX * radius;
             int circleCenterY = _paint.Brush!.CurrentY + dirY * radius;
 
-            IsValid(circleCenterX, circleCenterY, _paint.Canvas.Cols, _paint.Canvas.Rows);
+            IsValid(circleCenterX, circleCenterY, _paint.Canvas.Dimension);
             
             _paint.Brush!.CurrentX = circleCenterX;
             _paint.Brush!.CurrentY = circleCenterY;
@@ -111,7 +111,7 @@ namespace Visual.Controllers
             int rectCenterX = _paint.Brush!.CurrentX + dirX * distance;
             int rectCenterY = _paint.Brush!.CurrentY + dirY * distance;
 
-            IsValid(rectCenterX, rectCenterY, _paint.Canvas.Cols, _paint.Canvas.Rows);
+            IsValid(rectCenterX, rectCenterY, _paint.Canvas.Dimension);
 
             _paint.Brush!.CurrentX = rectCenterX;
             _paint.Brush!.CurrentY = rectCenterY;
@@ -183,8 +183,8 @@ namespace Visual.Controllers
                     int paintX = centerX + offsetX;
                     int paintY = centerY + offsetY;
 
-                    if (paintY >= 0 && paintY < canvas.Rows &&
-                        paintX >= 0 && paintX < canvas.Cols)
+                    if (paintY >= 0 && paintY < canvas.Dimension &&
+                        paintX >= 0 && paintX < canvas.Dimension)
                     {
                         canvas.CellsColor[paintY, paintX] = color;   
                     }
@@ -212,7 +212,7 @@ namespace Visual.Controllers
         }
         private void RecursiveFill(CanvasData canvas, int y, int x, Color targetColor, Color fillColor, int size)
         {
-            if (x < 0 || x >= canvas.Cols || y < 0 || y >= canvas.Rows)
+            if (x < 0 || x >= canvas.Dimension || y < 0 || y >= canvas.Dimension)
                 return;
             
             if (canvas.CellsColor[y, x] != targetColor)
@@ -252,9 +252,9 @@ namespace Visual.Controllers
             return dict;
         }
 
-        private void IsValid(int x, int y, int canvasCols, int canvasRows) 
+        private void IsValid(int x, int y, int dim) 
         {
-            if(!(x >= 0 && x < canvasCols && y >= 0 && y < canvasRows)) 
+            if(!(x >= 0 && x < dim && y >= 0 && y < dim)) 
             { 
                 throw new InvalidOperationException("Wall_E se sale del canvas");
             }

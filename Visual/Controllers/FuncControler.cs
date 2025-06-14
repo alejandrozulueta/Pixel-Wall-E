@@ -14,22 +14,16 @@ namespace Visual.Controllers
 
         [AttributeDefined("VisualFuncs")]
         public int GetActualX()
-        {
-            return _paint.Brush!.CurrentX;
-        }
+            => _paint.Brush!.CurrentX;
 
         [AttributeDefined("VisualFuncs")]
         public int GetActualY()
-        {
-            return _paint.Brush!.CurrentY;
-        }
+            => _paint.Brush!.CurrentY;
 
         [AttributeDefined("VisualFuncs")]
         public int GetCanvasSize()
-        {
-            throw new NotImplementedException();
-        }
-
+            => _paint.Canvas.Dimension;
+        
         [AttributeDefined("VisualFuncs")]
         public int GetColorCount(string color, int x1, int y1, int x2, int y2)
         {
@@ -38,23 +32,16 @@ namespace Visual.Controllers
 
         [AttributeDefined("VisualFuncs")]
         public bool IsBrushColor(string color)
-        {
-            return color.ToColor() == _paint.Brush!.CurrentColor;
-        }
-
+            => color.ToColor() == _paint.Brush!.CurrentColor;
+        
         [AttributeDefined("VisualFuncs")]
         public bool IsSize(int size)
-        {
-            return _paint.Brush!.Size == size;
-        }
-
+            => _paint.Brush!.Size == size;
+        
         [AttributeDefined("VisualFuncs")]
         public bool IsCanvasColor(string color, int vertical, int horizontal)
-        {
-            return _paint.Canvas.CellsColor[horizontal, vertical] == color.ToColor();
-        }
-
-
+            => _paint.Canvas.CellsColor[horizontal, vertical] == color.ToColor();
+        
         public Dictionary<string, FuncInfo> GetFuncs()
         {
             dict = dict ?? typeof(FuncControler).GetMethods()
@@ -75,7 +62,7 @@ namespace Visual.Controllers
                     return new Values(x.ReturnType.ToValueType(), result);
 
                 };
-                    return new { Key = x.Name, Value = new FuncInfo(@delegate, x.GetParameters())};
+                    return new { Key = x.Name, Value = new FuncInfo(@delegate, x.GetParameters()) };
 
                 })
                 .ToDictionary(item => item.Key, item => item.Value);

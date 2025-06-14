@@ -18,7 +18,7 @@ namespace Visual
         private void Excecute()
         {
             SB.Clear();
-            Canvas = new CanvasData(Canvas.Rows, Canvas.Cols);
+            Canvas = new CanvasData(Canvas.Dimension);
             Brush = null;
             try
             {
@@ -113,12 +113,12 @@ namespace Visual
 
             DrawCanvas.Children.Clear();
 
-            double widthCells = DrawCanvas.ActualWidth / Canvas.Cols;
-            double heightCells = DrawCanvas.ActualHeight / Canvas.Rows;
+            double widthCells = DrawCanvas.ActualWidth / Canvas.Dimension;
+            double heightCells = DrawCanvas.ActualHeight / Canvas.Dimension;
 
-            for (int i = 0; i < Canvas.Rows; i++)
+            for (int i = 0; i < Canvas.Dimension; i++)
             {
-                for (int j = 0; j < Canvas.Cols; j++)
+                for (int j = 0; j < Canvas.Dimension; j++)
                 {
                     var color = Canvas.CellsColor[i, j];
                     Rectangle celdaRect = new()
@@ -144,9 +144,9 @@ namespace Visual
             }
         }
 
-        private void Resize(int rows = 20, int cols = 20)
+        private void Resize(int Dimension = 20)
         {
-            Canvas = new CanvasData(rows, cols);
+            Canvas = new CanvasData(Dimension);
             DrawGrid();
         }
 
