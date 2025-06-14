@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using Visual.Controllers;
 using Visual.Data;
@@ -52,7 +53,7 @@ namespace Visual
 
         private void TextChanged(object sender, TextChangedEventArgs e)
         {
-            string code = CodeEditor.Text;
+            string code = new TextRange(CodeEditor.Document.ContentStart, CodeEditor.Document.ContentEnd).Text;
 
             UpdateLineNumbers();
 
@@ -145,7 +146,8 @@ namespace Visual
 
                 try
                 {
-                    File.WriteAllText(rutaArchivo, CodeEditor.Text);
+                    var text = new TextRange(CodeEditor.Document.ContentStart, CodeEditor.Document.ContentEnd).Text;
+                    File.WriteAllText(rutaArchivo, text);
 
                     MessageBox.Show("¡Archivo guardado exitosamente!", "Guardado", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
@@ -174,8 +176,7 @@ namespace Visual
                 {
                     string contenidoArchivo = File.ReadAllText(rutaArchivo);
 
-                    CodeEditor.Text = contenidoArchivo;
-
+                    new TextRange(CodeEditor.Document.ContentStart, CodeEditor.Document.ContentEnd).Text = contenidoArchivo;             
                     MessageBox.Show("¡Archivo cargado exitosamente!", "Cargado", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)

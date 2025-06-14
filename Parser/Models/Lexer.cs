@@ -34,8 +34,6 @@ public static class Lexer
         foreach (var match in regex.Matches(input).Cast<Match>())
         {
             var lex = match.Value;
-            column += match.Length;
-            count += match.Length;
             TokenType tokenType = GetTokenType(ref lex);
             if (!string.IsNullOrEmpty(lex.Trim()) || tokenType is TokenType.EndOfLine)
             {
@@ -60,6 +58,9 @@ public static class Lexer
                     continue;
                 }
                 tokens.Add(new Tokens(tokenType, lex, line, column));
+                
+                column += match.Length;
+                count += match.Length;
             }
             if (tokenType is TokenType.EndOfLine or TokenType.Label)
             {
@@ -71,7 +72,7 @@ public static class Lexer
             tokens[^1].Type = TokenType.Label;
         else if (tokens[^1].Type != TokenType.EndOfLine)
             tokens.Add(new Tokens(TokenType.EndOfLine, "$", line, column));
-        tokens.Add(new Tokens(TokenType.EOS, "$", line + 1, 0));
+        tokens.Add(new Tokens(TokenType.EOS, "$", line, 0));
 
         return [.. tokens];
     }

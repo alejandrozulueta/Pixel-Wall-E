@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls.Primitives;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
@@ -57,13 +58,46 @@ namespace Visual
                 lines.AppendLine(exceptions[i].Location.Row.ToString());
             }
 
+            foreach (var error in exceptions)
+            {
+                HighlightErrorRange(error.Location.Row, error.Location.InitCol, error.Location.EndCol);
+            }
+
             Errors.Text = errors.ToString();
             ErrorsLine.Text = lines.ToString();
         }
 
+        private void HighlightErrorRange(int line, int startChar, int endChar)
+        {
+            
+            var paragraph = CodeEditor.Document.Blocks.ElementAt(line - 1) as Paragraph;
+            if (paragraph == null) return;
+
+            TextPointer startPointer = paragraph.ContentStart.GetPositionAtOffset(startChar);
+            TextPointer endPointer = paragraph.ContentStart.GetPositionAtOffset(endChar);
+
+            if (startPointer == null || endPointer == null) return;
+
+            TextRange errorRange = new TextRange(startPointer, endPointer);
+
+            var redUnderline = (TextDecorationCollection)this.FindResource("RedUnderline");
+            errorRange.ApplyPropertyValue(Inline.TextDecorationsProperty, redUnderline);
+            
+        }
+
+        private void ClearAllHighlights() // Add
+        {
+            TextRange documentRange = new TextRange(
+                CodeEditor.Document.ContentStart,
+                CodeEditor.Document.ContentEnd
+            );
+
+            documentRange.ApplyPropertyValue(Inline.TextDecorationsProperty, null);
+        }
+
         private void UpdateLineNumbers()
         {
-            int lineCount = CodeEditor.LineCount;
+            int lineCount = CodeEditor.Document.Blocks.Count;
 
             StringBuilder lineNumbersText = new();
             for (int i = 1; i <= lineCount; i++)
@@ -138,10 +172,13 @@ namespace Visual
 
         private void ShowSuggest(CodeInfo codeInfo)
         {
-            string currentText = CodeEditor.Text;
-            int caretIndex = CodeEditor.CaretIndex;
+            string currentText = new TextRange(CodeEditor.Document.ContentStart, CodeEditor.Document.ContentEnd).Text;
+
+            TextPointer caretPosition = CodeEditor.CaretPosition;
+            int caretIndex = new TextRange(CodeEditor.Document.ContentStart, caretPosition).Text.Length;
+
             List<string> Sugg = [];
-            int horizontalMargin = 15;
+            int horizontalMargin = 5;
 
             if (SuggestionPopup.IsOpen == true)
             {
@@ -149,9 +186,7 @@ namespace Visual
                 return;
             }
 
-            SuggestionPopup.IsOpen = false;
-
-            if (string.IsNullOrWhiteSpace(currentText) || caretIndex == 0)
+            if (string.IsNullOrWhiteSpace(currentText) || caretPosition.CompareTo(CodeEditor.Document.ContentStart) == 0)
             {
                 SuggestionPopup.IsOpen = false;
                 return;
@@ -161,37 +196,30 @@ namespace Visual
 
             Sugg = GetSuggest(codeInfo, wordToSuggest);
 
-            if (Sugg.Count == 0)
-                return;
-
-            if (string.IsNullOrWhiteSpace(wordToSuggest))
+            if (Sugg.Count == 0 || string.IsNullOrWhiteSpace(wordToSuggest))
             {
                 SuggestionPopup.IsOpen = false;
                 return;
             }
 
             SuggestionListBox.ItemsSource = Sugg;
-            SuggestionListBox.SelectedIndex = -1;
-
             SuggestionListBox.SelectedIndex = 0;
 
-            Rect caretVisualRect = CodeEditor.GetRectFromCharacterIndex(caretIndex);
+            Rect caretVisualRect = caretPosition.GetCharacterRect(LogicalDirection.Forward);
 
-            Point placementPoint;
-
-
-            if (caretIndex > 0)
+            if (caretVisualRect.IsEmpty || caretVisualRect.Top == 0.0)
             {
-                Rect prevCharRect = CodeEditor.GetRectFromCharacterIndex(caretIndex - 1);
-                placementPoint = new Point(prevCharRect.Right, prevCharRect.Top);
+                TextPointer prevCharPosition = caretPosition.GetPositionAtOffset(-1, LogicalDirection.Backward);
+                if (prevCharPosition != null)
+                {
+                    caretVisualRect = prevCharPosition.GetCharacterRect(LogicalDirection.Forward);
+                }
             }
 
-            placementPoint = new Point(caretVisualRect.Left + horizontalMargin, caretVisualRect.Top);
+            Point placementPoint = new Point(caretVisualRect.Left + horizontalMargin, caretVisualRect.Bottom);
 
             SuggestionPopup.CustomPopupPlacementCallback = GetPopupPlacementCallback(placementPoint);
-
             SuggestionPopup.IsOpen = true;
-
         }
 
         private List<string> GetSuggest(CodeInfo codeInfo, string wordToSuggest)
@@ -279,19 +307,28 @@ namespace Visual
                 return;
             }
 
-            string currentText = CodeEditor.Text;
-            int caretIndex = CodeEditor.CaretIndex;
+            TextPointer caretPosition = CodeEditor.CaretPosition;
+            string currentTextForAnalysis = new TextRange(CodeEditor.Document.ContentStart, CodeEditor.Document.ContentEnd).Text;
+            int caretIndexForAnalysis = new TextRange(CodeEditor.Document.ContentStart, caretPosition).Text.Length;
 
-            string wordToReplace = GetWord(currentText, caretIndex);
+            string wordToReplace = GetWord(currentTextForAnalysis, caretIndexForAnalysis);
 
-            int startIndex = caretIndex - wordToReplace.Length;
+            if (string.IsNullOrEmpty(wordToReplace))
+            {
+                SuggestionPopup.IsOpen = false;
+                return;
+            }
 
-            string newText = currentText.Remove(startIndex, wordToReplace.Length);
-            newText = newText.Insert(startIndex, selectedSugg);
+            TextPointer endOfWord = caretPosition;
+            TextPointer startOfWord = caretPosition.GetPositionAtOffset(-wordToReplace.Length);
 
-            CodeEditor.Text = newText;
+            if (startOfWord == null) return;
 
-            CodeEditor.CaretIndex = startIndex + selectedSugg.Length;
+            TextRange wordRange = new TextRange(startOfWord, endOfWord);
+
+            wordRange.Text = selectedSugg;
+
+            CodeEditor.CaretPosition = wordRange.End;
 
             SuggestionPopup.IsOpen = false;
             CodeEditor.Focus();

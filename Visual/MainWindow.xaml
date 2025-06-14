@@ -9,6 +9,13 @@
         SizeChanged="Window_SizeChanged">
     <Window.Resources>
         <local:Settings x:Key="Settings" Height="450" Width="800"/>
+        <TextDecorationCollection x:Key="RedUnderline">
+            <TextDecoration Location="Underline">
+                <TextDecoration.Pen>
+                    <Pen Brush="Red" Thickness="1" />
+                </TextDecoration.Pen>
+            </TextDecoration>
+        </TextDecorationCollection>
     </Window.Resources>
 
     <Window.DataContext>
@@ -57,9 +64,22 @@
                              IsReadOnly="True"
                              Text="1"
                              Grid.Column="0"/>
-                        <TextBox x:Name="CodeEditor" 
-                            Grid.Column="1" KeyDown="CodeEditor_KeyDown" Text="" TextChanged="TextChanged"
-                            AcceptsReturn="True" PreviewKeyDown="CodeEditor_PreviewKeyDown"/>
+                        <Grid Grid.Column="1">
+                            <RichTextBox x:Name="CodeEditor" 
+                                AcceptsReturn="True"
+                                VerticalScrollBarVisibility="Auto"
+                                HorizontalScrollBarVisibility="Auto"
+                                KeyDown="CodeEditor_KeyDown" TextChanged="TextChanged"
+                                PreviewKeyDown="CodeEditor_PreviewKeyDown">
+
+                                <RichTextBox.Resources>
+                                    <Style TargetType="{x:Type Paragraph}">
+                                        <Setter Property="Margin" Value="0"/>
+                                    </Style>
+                                </RichTextBox.Resources>
+                                
+                            </RichTextBox>
+                        </Grid>
 
                     </Grid>
                 </ScrollViewer>
