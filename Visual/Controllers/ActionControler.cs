@@ -252,7 +252,7 @@ namespace Visual.Controllers
             return dict;
         }
 
-        private void IsValid(int x, int y, uint canvasCols, uint canvasRows) 
+        private void IsValid(int x, int y, int canvasCols, int canvasRows) 
         {
             if(!(x >= 0 && x < canvasCols && y >= 0 && y < canvasRows)) 
             { 

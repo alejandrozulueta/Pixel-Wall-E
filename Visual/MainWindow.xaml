@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Visual"
         mc:Ignorable="d"
-        Title="MainWindow" Height="{Binding Height}" Width="{Binding Width}"
+        Title="MainWindow"  Height="{Binding Height}" Width="{Binding Width}"
         SizeChanged="Window_SizeChanged">
     <Window.Resources>
         <local:Settings x:Key="Settings" Height="450" Width="800"/>
@@ -17,7 +17,7 @@
 
     <DockPanel>
 
-        <Border DockPanel.Dock="Top" Background="Transparent" Visibility="Visible">
+        <Border DockPanel.Dock="Top" Visibility="Visible">
             <Menu x:Name="Menu">
                 <MenuItem Header="_Archivo">
                     <MenuItem Header="_Guardar" Click="SaveClick"/>
@@ -59,11 +59,11 @@
                              Grid.Column="0"/>
                         <TextBox x:Name="CodeEditor" 
                             Grid.Column="1" KeyDown="CodeEditor_KeyDown" Text="" TextChanged="TextChanged"
-                            AcceptsReturn="True"/>
+                            AcceptsReturn="True" PreviewKeyDown="CodeEditor_PreviewKeyDown"/>
 
                     </Grid>
                 </ScrollViewer>
-                <TabControl Name = "Tap" Grid.Row="1" Visibility="Visible">
+                <TabControl Name = "Tap" Grid.Row="1" Visibility="Collapsed">
 
                     <TabItem Header="Errors">
                         <ScrollViewer>
@@ -104,7 +104,8 @@
                     <Border BorderBrush="Gray" BorderThickness="1" Background="WhiteSmoke" CornerRadius="3" Padding="2">
                         <ListBox x:Name="SuggestionListBox"
                          MaxHeight="200"
-                         MinWidth="150">
+                         MinWidth="150"
+                         MouseUp="SuggestionClick">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding}" Padding="3"/>

@@ -1,6 +1,8 @@
 ﻿using System.Reflection;
+using System.Windows.Controls;
 using Visual.Attributes;
 using Visual.Data;
+using Visual.Extensions;
 using Visual.Interfaces;
 
 namespace Visual.Controllers
@@ -13,13 +15,13 @@ namespace Visual.Controllers
         [AttributeDefined("VisualFuncs")]
         public int GetActualX()
         {
-            throw new NotImplementedException();
+            return _paint.Brush!.CurrentX;
         }
 
         [AttributeDefined("VisualFuncs")]
         public int GetActualY()
         {
-            throw new NotImplementedException();
+            return _paint.Brush!.CurrentY;
         }
 
         [AttributeDefined("VisualFuncs")]
@@ -37,20 +39,21 @@ namespace Visual.Controllers
         [AttributeDefined("VisualFuncs")]
         public bool IsBrushColor(string color)
         {
-            throw new NotImplementedException();
+            return color.ToColor() == _paint.Brush!.CurrentColor;
+        }
+
+        [AttributeDefined("VisualFuncs")]
+        public bool IsSize(int size)
+        {
+            return _paint.Brush!.Size == size;
         }
 
         [AttributeDefined("VisualFuncs")]
         public bool IsCanvasColor(string color, int vertical, int horizontal)
         {
-            throw new NotImplementedException();
+            return _paint.Canvas.CellsColor[horizontal, vertical] == color.ToColor();
         }
 
-        [AttributeDefined("VisualFuncs")]
-        public bool IsColor(string color, int x, int y)
-        {
-            throw new NotImplementedException();
-        }
 
         public Dictionary<string, FuncInfo> GetFuncs()
         {
