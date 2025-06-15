@@ -111,12 +111,12 @@ public class Parser
         if (tokens[tokenIndex++].Type != TokenType.Goto)
             return ResetDefault(startIndex, out exp);
         if (tokens[tokenIndex++].Type != TokenType.OpenBracket)
-            return ResetDefault(startIndex, out exp, string.Format(message, '[', tokens[tokenIndex - 1].Identifier), tokens[tokenIndex].Location);
+            return ResetDefault(startIndex, out exp, string.Format(message, '[', tokens[tokenIndex - 1].Identifier), tokens[tokenIndex - 1].Location);
         var labelName = tokens[tokenIndex].Identifier;
         if (tokens[tokenIndex++].Type != TokenType.Identifier)
-            return ResetDefault(startIndex, out exp, string.Format(message, "Indentificador", tokens[tokenIndex - 1].Identifier), tokens[tokenIndex].Location);
+            return ResetDefault(startIndex, out exp, string.Format(message, "Indentificador", tokens[tokenIndex - 1].Identifier), tokens[tokenIndex - 1].Location);
         if (tokens[tokenIndex++].Type != TokenType.CloseBracket)
-            return ResetDefault(startIndex, out exp, string.Format(message, "]", tokens[tokenIndex - 1].Identifier), tokens[tokenIndex].Location);
+            return ResetDefault(startIndex, out exp, string.Format(message, "]", tokens[tokenIndex - 1].Identifier), tokens[tokenIndex - 1].Location);
 
         if (tokens[tokenIndex].Type == TokenType.EndOfLine)
         {
@@ -127,14 +127,14 @@ public class Parser
         }
 
         if (tokens[tokenIndex++].Type != TokenType.OpenParenthesis)
-            return ResetDefault(startIndex, out exp, string.Format(message, "(", tokens[tokenIndex - 1].Identifier), tokens[tokenIndex].Location);
+            return ResetDefault(startIndex, out exp, string.Format(message, "(", tokens[tokenIndex - 1].Identifier), tokens[tokenIndex - 1].Location);
 
         GetExpressionType(tokens, out IExpression? @bool);
 
         if (@bool is null)
             return ResetDefault(startIndex, out exp, string.Format(message_2, "booleano"), tokens[tokenIndex].Location);
         if (tokens[tokenIndex++].Type != TokenType.CloseParenthesis)
-            return ResetDefault(startIndex, out exp, string.Format(message, ")", tokens[tokenIndex - 1].Identifier), tokens[tokenIndex].Location);
+            return ResetDefault(startIndex, out exp, string.Format(message, ")", tokens[tokenIndex - 1].Identifier), tokens[tokenIndex - 1].Location);
         if (tokens[tokenIndex++].Type != TokenType.EndOfLine)
             return ResetDefault(startIndex, out exp, string.Format(message_2, "cambio de línea"), tokens[tokenIndex].Location);
         node = new GotoExpression(labelName, @bool!, tokens[startIndex].Location + tokens[tokenIndex].Location);
@@ -167,7 +167,7 @@ public class Parser
         }
 
         if (tokens[tokenIndex++].Type != TokenType.EndOfLine && AddExc(exist))
-            return ResetDefault(startIndex, out exp, string.Format(message, "cambio de línea"), tokens[tokenIndex].Location);
+            return ResetDefault(startIndex, out exp, string.Format(message, "cambio de línea"), tokens[tokenIndex - 1].Location);
         return AssingDefault(tokens[startIndex], value, out exp);
     }
 
@@ -181,15 +181,18 @@ public class Parser
             return ResetDefault(startIndex, out exp);
 
         if (tokens[tokenIndex++].Type != TokenType.EndOfLine && AddExc(exist))
-            return ResetDefault(startIndex, out exp, string.Format(message, "cambio de línea"), tokens[tokenIndex].Location);
-        return ActionDefault(tokens[startIndex], expressions!, out exp);
+            return ResetDefault(startIndex, out exp, string.Format(message, "cambio de línea"), tokens[tokenIndex - 1].Location);
+        return ActionDefault(tokens[startIndex].Identifier, expressions!, 
+            tokens[startIndex].Location + tokens[tokenIndex - 1].Location, out exp);
     }
 
     private bool GetCallFunction(Tokens[] tokens, out IExpression? exp)
     {
+        int startIndex = tokenIndex;
         if (!CheckFunction(tokens, out IExpression[]? expressions))
             return ResetDefault(tokenIndex, out exp);
-        return FunctDefault(tokens[tokenIndex++], expressions!, out exp);
+        return FunctDefault(tokens[tokenIndex].Identifier, expressions!, 
+            tokens[startIndex].Location + tokens[tokenIndex++].Location, out exp);
     }
     private bool CheckFunction(Tokens[] tokens, out IExpression[]? expressions)
     {
@@ -222,7 +225,7 @@ public class Parser
         } while (tokens[tokenIndex++].Type == TokenType.Comma);
 
         if (tokens[tokenIndex - 1].Identifier != ")")
-            return ResetDefault(startIndex, out expressions, string.Format(message, ")"), tokens[tokenIndex].Location);
+            return ResetDefault(startIndex, out expressions, string.Format(message, ")"), tokens[tokenIndex - 1].Location);
         return GetDefault([.. @params], out expressions);
     }
 
@@ -565,15 +568,15 @@ public class Parser
         return true;
     }
 
-    private bool ActionDefault(Tokens action, IExpression?[] values, out IInstruction? exp)
+    private bool ActionDefault(string action, IExpression?[] values, Location location, out IInstruction? exp)
     {
-        exp = new ActionInstruction(action.Identifier, values!, action.Location);
+        exp = new ActionInstruction(action, values!, location);
         return true;
     }
 
-    private bool FunctDefault(Tokens name, IExpression?[] values, out IExpression? exp)
+    private bool FunctDefault(string name, IExpression?[] values, Location location, out IExpression? exp)
     {
-        exp = new FuncExpresion(name.Identifier, values!, name.Location);
+        exp = new FuncExpresion(name, values!, location);
         return true;
     }
 

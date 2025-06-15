@@ -1,6 +1,10 @@
+using Core.Exceptions;
 using Core.Models;
 using Expressions.Interfaces;
 using Expressions.Models;
+using System;
+using System.Reflection;
+using System.Xml.Linq;
 
 namespace Expressions.Visitors;
 
@@ -51,9 +55,31 @@ public class Execute(Context Context) : IExpressionsVisitor
             ? value!
             : throw new Exception();
 
-    public void ActionVisit(string action, Values[] value, Location location) => Context.GetAction(action)(value);
+    public void ActionVisit(string action, Values[] value, Location location) 
+    {
+        try
+        {
+            Context.GetAction(action)(value);
+        }
 
-    public Values FuncVisit(string func, Values[] value, Location location) => Context.GetFunction(func)(value);
+        catch (TargetInvocationException ex)
+        { 
+            throw new Exception(ex.InnerException!.Message);
+        }
+    }
+
+    public Values FuncVisit(string func, Values[] value, Location location)
+    {
+        try
+        {
+            return Context.GetFunction(func)(value); 
+        }
+
+        catch (TargetInvocationException ex)
+        {
+            throw new Exception(ex.InnerException!.Message);
+        }
+    }
 
     public void GotoVisit(string label, Values cond, Location location) =>
         targetLabel = (gotoFlag = cond.Value ?? false) ? label : null;
@@ -66,7 +92,16 @@ public class Execute(Context Context) : IExpressionsVisitor
         SearchLabel(expressions);
         for (int i = 0; i < expressions.Length; i++)
         {
-            expressions[i].Accept(this);
+            try
+            {
+                expressions[i].Accept(this);
+            }
+
+            catch (Exception ex)
+            {
+                throw new ExceptionWL(ex.Message, expressions[i].Location);
+            }
+
             if (!gotoFlag)
                 continue;
             if (!Context.CurrentScope!.TryGetLabel(targetLabel!, out int temp))

@@ -19,8 +19,8 @@ public static class Lexer
                 + @"|""[^""\r\n]*"
                 + @"|"".*\r\n"
                 + @"|"".*\n"
-                + @"|(==|>=|<=|!=)"
-                + @"|([\[\]\(\)\+\-\*/%^=><\&\|,!])"
+                + @"|(==|>=|<=|!= |<-)"
+                + @"|([\[\]\(\)\+\-\*/%^><\&\|,!])"
                 + @"|[\t ]"
                 + @"|\r\n|\n"
                 + @"|."
@@ -83,7 +83,7 @@ public static class Lexer
             "+" or "-" or "*" or "/" or "%" => TokenType.BinaryOperator,
             "==" or ">=" or "<=" or "!=" => TokenType.BinaryOperator,
             ">" or "<" => TokenType.BinaryOperator,
-            "=" => TokenType.AssingOperator,
+            "<-" => TokenType.AssingOperator,
             "!" or "-" => TokenType.UnaryOperator,
             "(" => TokenType.OpenParenthesis,
             ")" => TokenType.CloseParenthesis,
@@ -91,7 +91,7 @@ public static class Lexer
             "]" => TokenType.CloseBracket,
             "^" => TokenType.BinaryOperator,
             "&" or "|" => TokenType.BinaryOperator,
-            "goto" => TokenType.Goto,
+            "GoTo" => TokenType.Goto,
             "\r\n" or "\n" => TokenType.EndOfLine,
             _ => TokenType.Identifier,
         };

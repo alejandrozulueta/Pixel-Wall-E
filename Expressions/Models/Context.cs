@@ -38,8 +38,9 @@ public class Context(
                 Functions.TryGetValue(name, out FuncInfo? func);
                 return func!.Info;
             case Methods.Action:
-                Actions.TryGetValue(name, out ActionInfo? acts);
-                return acts!.Info;
+                Actions.TryGetValue(name, out ActionInfo? act);
+                Functions.TryGetValue(name, out FuncInfo? actAsFunc);
+                return act != null ? act.Info : actAsFunc!.Info;
             default:
                 throw new NotImplementedException();
         }

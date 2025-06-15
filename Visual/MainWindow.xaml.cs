@@ -82,7 +82,7 @@ namespace Visual
         {
             if (codeInfo is null || Errors.Text != "")
                 return;
-            
+
             if (Keyboard.Modifiers != ModifierKeys.Control)
                 return;
 

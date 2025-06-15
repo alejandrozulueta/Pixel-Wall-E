@@ -125,15 +125,17 @@ namespace Expressions.Visitors
 
         public void ActionVisit(string action, Values[] value, Location location) 
         {
-            if (!Context.Actions.TryGetValue(action, out ActionInfo? _) || Context.Functions.TryGetValue(action, out FuncInfo? _))
+            if (!Context.Actions.TryGetValue(action, out ActionInfo? _) && !Context.Functions.TryGetValue(action, out FuncInfo? _))
             {
                 message = $"Método {action} no implementado";
                 Exceptions.Add(new SemanticException(message, location));
                 return;
             }
 
-            var @params = Context.GetOParamsInfo(action, Methods.Action);
+            ParameterInfo[] @params;
 
+            @params = Context.GetOParamsInfo(action, Methods.Action);
+            
             if (value.Length < @params.Length) 
             { 
                 var param = @params[value.Length].Name;

@@ -9,7 +9,9 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using Visual.Data;
+using Visual.Enums;
 using Visual.Interfaces;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Visual
 {
@@ -24,17 +26,7 @@ namespace Visual
             {
                 main.ExecuteCode(codeInfo!);
             }
-            catch (TargetInvocationException tie)
-            {
-                MessageBox.Show(
-                    tie.InnerException?.Message,
-                    "Execution Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error
-                );
-                return;
-            }
-            catch (Exception ex)
+            catch (ExceptionWL ex)
             {
                 MessageBox.Show(
                     ex.Message,
@@ -42,6 +34,11 @@ namespace Visual
                     MessageBoxButton.OK,
                     MessageBoxImage.Error
                 );
+
+                var error = ex;
+
+                UnderLineErrors(ErrorTypes.Execution, error.Location.Row, error.Location.InitCol, error.Location.EndCol);
+
                 return;
             }
             DrawGrid();
@@ -60,16 +57,16 @@ namespace Visual
 
             foreach (var error in exceptions)
             {
-                HighlightErrorRange(error.Location.Row, error.Location.InitCol, error.Location.EndCol);
+                UnderLineErrors(ErrorTypes.Compilation, error.Location.Row, error.Location.InitCol, error.Location.EndCol);
             }
 
             Errors.Text = errors.ToString();
             ErrorsLine.Text = lines.ToString();
         }
 
-        private void HighlightErrorRange(int line, int startChar, int endChar)
+        private void UnderLineErrors(ErrorTypes error, int line, int startChar, int endChar)
         {
-            
+
             var paragraph = CodeEditor.Document.Blocks.ElementAt(line - 1) as Paragraph;
             if (paragraph == null) return;
 
@@ -80,12 +77,21 @@ namespace Visual
 
             TextRange errorRange = new TextRange(startPointer, endPointer);
 
-            var redUnderline = (TextDecorationCollection)this.FindResource("RedUnderline");
-            errorRange.ApplyPropertyValue(Inline.TextDecorationsProperty, redUnderline);
-            
+            switch (error) 
+            {
+                case ErrorTypes.Compilation:
+                    var redUnderline = (TextDecorationCollection)this.FindResource("RedUnderline");
+                    errorRange.ApplyPropertyValue(Inline.TextDecorationsProperty, redUnderline);
+                    break;
+                case ErrorTypes.Execution:
+                    errorRange.ApplyPropertyValue(Inline.BackgroundProperty, Brushes.Yellow);
+                    break;
+            }
+
+
         }
 
-        private void ClearAllHighlights() // Add
+        private void HideUnderLineErrors()
         {
             TextRange documentRange = new TextRange(
                 CodeEditor.Document.ContentStart,
