@@ -68,7 +68,6 @@ namespace Visual
 
         private void UnderLineErrors(ErrorTypes error, int line, int startChar, int endChar)
         {
-
             var paragraph = CodeEditor.Document.Blocks.ElementAt(line - 1) as Paragraph;
             if (paragraph == null) return;
 
@@ -94,12 +93,14 @@ namespace Visual
 
         private void HideUnderLineErrors()
         {
+            _isHiddenErrors = true;
             TextRange documentRange = new TextRange(
                 CodeEditor.Document.ContentStart,
                 CodeEditor.Document.ContentEnd
             );
             documentRange.ApplyPropertyValue(Inline.TextDecorationsProperty, null);
             documentRange.ApplyPropertyValue(Inline.BackgroundProperty, null);
+            _isHiddenErrors = false ;
         }
 
         private void UpdateLineNumbers()

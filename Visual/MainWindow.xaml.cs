@@ -31,6 +31,7 @@ namespace Visual
         private CodeInfo? codeInfo;
 
         private bool _isApplyingFormat = false;
+        private bool _isHiddenErrors = false;
 
         public MainWindow()
         {
@@ -55,11 +56,9 @@ namespace Visual
 
         private void TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (_isApplyingFormat)
-            {
+            if (_isApplyingFormat || _isHiddenErrors)
                 return;
-            }
-
+            
             _isApplyingFormat = true;
 
             string code = new TextRange(CodeEditor.Document.ContentStart, CodeEditor.Document.ContentEnd).Text;

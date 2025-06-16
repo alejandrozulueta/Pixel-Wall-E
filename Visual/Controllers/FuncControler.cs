@@ -29,7 +29,7 @@ namespace Visual.Controllers
         {
             int count = 0;
             var targetColor = color.ToColor();
-            for (int y = y1; y <= y2; y++)
+            for (int y = y2; y >= y1; y--)
             {
                 for (int x = x1; x <= x2; x++)
                 {
