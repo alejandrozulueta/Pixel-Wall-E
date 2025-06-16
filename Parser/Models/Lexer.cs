@@ -70,7 +70,9 @@ public static class Lexer
         }
         if (tokens[^1].Type == TokenType.Identifier && tokens[^1].Location.InitCol == 0)
             tokens[^1].Type = TokenType.Label;
-        else if (tokens[^1].Type != TokenType.EndOfLine)
+        if (tokens[^1].Type == TokenType.Label && tokens[^1].Location.InitCol != 0)
+            tokens[^1].Type = TokenType.Identifier;
+        if (tokens[^1].Type != TokenType.EndOfLine)
             tokens.Add(new Tokens(TokenType.EndOfLine, "$", line, column));
         tokens.Add(new Tokens(TokenType.EOS, "$", line, 0));
 

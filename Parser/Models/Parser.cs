@@ -545,12 +545,14 @@ public class Parser
         var startIndex = tokenIndex;
         var token = tokens[tokenIndex++];
         var message = TemplatesErrors.EXPECTEDERROR_2;
+        var exist = exceptions.Count;
         if (Values.TryParse(token.Identifier, token.Type, out Values? value))
             return GetDefault(new ValueExpression(value!, token.Location), out termExp);
         if (token.Type == TokenType.Identifier)
         {
             if (GetCallFunction(tokens, out IExpression? function))
                 return GetDefault(function, out termExp);
+            exceptions.RemoveRange(exist, exceptions.Count - exist);
             return GetDefault(new VariableExpression(token.Identifier, token.Location), out termExp);
         }
         
