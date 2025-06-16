@@ -95,8 +95,8 @@ namespace Visual
                 CodeEditor.Document.ContentStart,
                 CodeEditor.Document.ContentEnd
             );
-
             documentRange.ApplyPropertyValue(Inline.TextDecorationsProperty, null);
+            documentRange.ApplyPropertyValue(Inline.BackgroundProperty, null);
         }
 
         private void UpdateLineNumbers()

@@ -30,6 +30,8 @@ namespace Visual
 
         private CodeInfo? codeInfo;
 
+        private bool _isApplyingFormat = false;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -53,6 +55,13 @@ namespace Visual
 
         private void TextChanged(object sender, TextChangedEventArgs e)
         {
+            if (_isApplyingFormat)
+            {
+                return;
+            }
+
+            _isApplyingFormat = true;
+            
             string code = new TextRange(CodeEditor.Document.ContentStart, CodeEditor.Document.ContentEnd).Text;
 
             UpdateLineNumbers();
@@ -76,6 +85,8 @@ namespace Visual
                 }
                 Errors.Text = sb.ToString();
             }
+
+            _isApplyingFormat = false;
         }
 
         private void CodeEditor_KeyDown(object sender, KeyEventArgs e)
@@ -96,6 +107,8 @@ namespace Visual
 
         private void CodeEditor_PreviewKeyDown(object sender, KeyEventArgs e)
         {
+            HideUnderLineErrors();
+
             if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.Space)
             {
                 e.Handled = true;
