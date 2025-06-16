@@ -74,6 +74,9 @@ public static class Lexer
             tokens.Add(new Tokens(TokenType.EndOfLine, "$", line, column));
         tokens.Add(new Tokens(TokenType.EOS, "$", line, 0));
 
+        if (tokens[0].Identifier != "Spawn")
+            exceptions.Add(new SyntaxException("Se esperaba 'Spawn' al inicio del código", tokens[0].Location));
+
         return [.. tokens];
     }
     private static TokenType GetTokenType(ref string lex)

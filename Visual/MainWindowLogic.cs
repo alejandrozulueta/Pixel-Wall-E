@@ -332,6 +332,10 @@ namespace Visual
 
                 startIndex--;
             }
+
+            if (startIndex < 0)
+                startIndex = 0;
+            
             return text[startIndex..caretIndex];
         }
 

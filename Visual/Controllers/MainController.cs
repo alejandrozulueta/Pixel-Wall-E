@@ -30,6 +30,7 @@ namespace Visual.Controllers
 
         public void ExecuteCode(CodeInfo info)
         {
+            ActionControler._exist = false;
             var visit = new Execute(info.Context);
             info.Node.Accept(visit);
         }

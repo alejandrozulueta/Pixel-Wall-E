@@ -11,6 +11,7 @@ namespace Visual.Controllers
     {
         IPaint _paint = paint;
         IPrinteable _print = print;
+        public bool _exist = false;
 
         private static Dictionary<string, ActionInfo>? dict;
 
@@ -19,8 +20,9 @@ namespace Visual.Controllers
         {
             IsValid(x, y, _paint.Canvas.Dimension);
 
-            if (_paint.Brush is not null)
+            if (_exist)
                 throw new InvalidOperationException("Wall_E ya se ha iniciado");
+            _exist = true;
             _paint.Brush = new BrushData(x, y);
             return;
         }
