@@ -27,7 +27,19 @@ namespace Visual.Controllers
         [AttributeDefined("VisualFuncs")]
         public int GetColorCount(string color, int x1, int y1, int x2, int y2)
         {
-            throw new NotImplementedException();
+            int count = 0;
+            var targetColor = color.ToColor();
+            for (int y = y1; y <= y2; y++)
+            {
+                for (int x = x1; x <= x2; x++)
+                {
+                    if (_paint.Canvas.CellsColor[y, x] == targetColor)
+                    {
+                        count++;
+                    }
+                }
+            }
+            return count;
         }
 
         [AttributeDefined("VisualFuncs")]
