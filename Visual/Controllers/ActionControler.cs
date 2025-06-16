@@ -267,7 +267,7 @@ namespace Visual.Controllers
 
         private void ValidDir(int x, int y)
         {
-            if ((x != Math.Abs(1) && x != 0) || (y != Math.Abs(1) && y != 0)) 
+            if (Math.Abs(x) > 1 || Math.Abs(y) > 1) 
             { 
                 throw new InvalidOperationException("Dirección inválida, debe ser -1, 0 o 1 en cada eje");
             }
