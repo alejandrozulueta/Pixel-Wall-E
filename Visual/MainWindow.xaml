@@ -32,6 +32,7 @@
                     <MenuItem Header="_Cargar" Click="LoadClick"/>
                 </MenuItem>
                 <MenuItem Header="_Redimensionar" Click="ResizeClick"/>
+                <MenuItem Header="_Ejecutar" Click="ExecuteClick"/>
             </Menu>
 
         </Border>

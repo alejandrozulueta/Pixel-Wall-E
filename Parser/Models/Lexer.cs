@@ -9,7 +9,7 @@ namespace Parser.Models;
 public static class Lexer
 {
     public static Tokens[] Tokenizer(string input, out List<ExceptionWL> exceptions)
-    {
+    {   // (?:-?[a-zA-Z0-9_])
         Regex regex = new(
             @"[a-zA-Z_][a-zA-Z0-9_]*[\t ]*\r\n"
                 + @"|[a-zA-Z_][a-zA-Z0-9_]*[\t ]*\n"

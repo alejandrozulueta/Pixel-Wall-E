@@ -22,7 +22,11 @@ namespace Visual
         private void Excecute()
         {
             SB.Clear();
-            Brush = new BrushData(0, 0); 
+            Brush = new BrushData(0, 0);
+
+            if (codeInfo == null)
+                return;
+            
             try
             {
                 main.ExecuteCode(codeInfo!);

@@ -139,6 +139,9 @@ namespace Visual
             }
         }
 
+        private void ExecuteClick(object sender, RoutedEventArgs e)
+            => Excecute();
+        
         private void ResizeEvent(object sender, RoutedEventArgs e) 
             => Resize();
 
