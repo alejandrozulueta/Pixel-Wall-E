@@ -364,9 +364,10 @@ namespace Visual
 
             if (startOfWord == null) return;
 
-            TextRange wordRange = new TextRange(startOfWord, endOfWord);
-
-            wordRange.Text = selectedSugg;
+            TextRange wordRange = new(startOfWord, endOfWord)
+            {
+                Text = selectedSugg
+            };
 
             CodeEditor.CaretPosition = wordRange.End;
 

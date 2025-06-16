@@ -1,5 +1,6 @@
 ﻿using System.Drawing;
 using System.Reflection;
+using System.Windows;
 using Visual.Attributes;
 using Visual.Data;
 using Visual.Extensions;
@@ -11,7 +12,6 @@ namespace Visual.Controllers
     {
         IPaint _paint = paint;
         IPrinteable _print = print;
-        public bool _exist = false;
 
         private static Dictionary<string, ActionInfo>? dict;
 
@@ -20,10 +20,10 @@ namespace Visual.Controllers
         {
             IsValid(x, y, _paint.Canvas.Dimension);
 
-            if (_exist)
+            if (_paint.Brush!.Exist)
                 throw new InvalidOperationException("Wall_E ya se ha iniciado");
-            _exist = true;
             _paint.Brush = new BrushData(x, y);
+            _paint.Brush.Exist = true;
             return;
         }
 

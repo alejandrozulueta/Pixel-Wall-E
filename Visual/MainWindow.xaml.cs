@@ -61,7 +61,7 @@ namespace Visual
             }
 
             _isApplyingFormat = true;
-            
+
             string code = new TextRange(CodeEditor.Document.ContentStart, CodeEditor.Document.ContentEnd).Text;
 
             UpdateLineNumbers();
@@ -72,6 +72,7 @@ namespace Visual
                 return;
 
             codeInfo = new CodeInfo(func.GetFuncs(), act.GetActs(), code);
+            
             ShowSuggest(codeInfo);
 
             if (!main.TryCode(codeInfo, out List<ExceptionWL>? exceptions))

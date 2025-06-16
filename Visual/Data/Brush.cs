@@ -13,5 +13,6 @@ namespace Visual.Data
         public int CurrentX { get; set; } = x;
         public int CurrentY { get; set;} = y;
         public int Size { get; set; } = 1;
+        public bool Exist { get; set; }
     }
 }
