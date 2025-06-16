@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Visual"
         mc:Ignorable="d"
-        Title="MainWindow"  Height="{Binding Height}" Width="{Binding Width}"
+        Title="Pixel Wall E"  Height="{Binding Height}" Width="{Binding Width}"
         SizeChanged="Window_SizeChanged">
     <Window.Resources>
         <local:Settings x:Key="Settings" Height="450" Width="800"/>

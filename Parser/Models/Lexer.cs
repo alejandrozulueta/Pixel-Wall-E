@@ -58,7 +58,7 @@ public static class Lexer
                     continue;
                 }
                 tokens.Add(new Tokens(tokenType, lex, line, column));
-                
+
                 column += match.Length;
                 count += match.Length;
             }
@@ -76,8 +76,8 @@ public static class Lexer
             tokens.Add(new Tokens(TokenType.EndOfLine, "$", line, column));
         tokens.Add(new Tokens(TokenType.EOS, "$", line, 0));
 
-        if (tokens[0].Identifier != "Spawn")
-            exceptions.Add(new SyntaxException("Se esperaba 'Spawn' al inicio del código", tokens[0].Location));
+        if (tokens[0].Identifier != "Spawn" || tokens[1].Type != TokenType.OpenParenthesis)
+            exceptions.Add(new SyntaxException("Se espera llamada al método 'Spawn' al inicio del código", tokens[0].Location));
 
         return [.. tokens];
     }
