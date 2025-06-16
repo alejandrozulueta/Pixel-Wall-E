@@ -11,7 +11,6 @@ using System.Windows.Shapes;
 using Visual.Data;
 using Visual.Enums;
 using Visual.Interfaces;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Visual
 {
@@ -77,7 +76,7 @@ namespace Visual
 
             TextRange errorRange = new TextRange(startPointer, endPointer);
 
-            switch (error) 
+            switch (error)
             {
                 case ErrorTypes.Compilation:
                     var redUnderline = (TextDecorationCollection)this.FindResource("RedUnderline");
@@ -87,7 +86,6 @@ namespace Visual
                     errorRange.ApplyPropertyValue(Inline.BackgroundProperty, Brushes.Yellow);
                     break;
             }
-
 
         }
 

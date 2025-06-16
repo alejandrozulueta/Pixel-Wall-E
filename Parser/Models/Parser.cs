@@ -302,11 +302,16 @@ public class Parser
             return ResetDefault(startIndex, out exp);
         }
 
+        return DispatcherTypeNumS(tokens, termExp, out exp);
+    }
+
+    private bool DispatcherTypeNumS(Tokens[] tokens, IExpression? termExp, out IExpression? exp)
+    {
         return tokens[tokenIndex].Identifier switch
         {
-            "+" or "-" => ConstructExpression(tokens, termExp!, out exp, GetMultExpressions, "+", "-"),
-            "/" or "*" => ConstructExpression(tokens, termExp!, out exp, GetPowExpressions, "/", "*"),
-            "^" => ConstructExpression(tokens, termExp!, out exp, GetLUNExpression, "^"),
+            "+" or "-" => ConstructExpression(tokens, termExp!, out termExp, GetMultExpressions, "+", "-") & DispatcherTypeNumS(tokens, termExp!, out exp),
+            "/" or "*" => ConstructExpression(tokens, termExp!, out termExp, GetPowExpressions, "/", "*") & DispatcherTypeNumS(tokens, termExp!, out exp),
+            "^" => ConstructExpression(tokens, termExp!, out termExp, GetLUNExpression, "^") & DispatcherTypeNumS(tokens, termExp!, out exp),
             "==" or "!=" or "<=" => GetDefault(termExp, out exp),
             ">=" or ">" or "<" => GetDefault(termExp, out exp),
             "$" or ")" or "," or "\n" or "\r\n" => GetDefault(termExp, out exp),
@@ -326,10 +331,15 @@ public class Parser
             return ResetDefault(startIndex, out exp);
         }
 
+        return DispatcherTypeBoolS(tokens, termExp!, out exp);
+    }
+
+    private bool DispatcherTypeBoolS(Tokens[] tokens, IExpression termExp, out IExpression? exp)
+    {
         return tokens[tokenIndex].Identifier switch
         {
-            "|" => ConstructExpression(tokens, termExp!, out exp, GetAndExpressions, "|"),
-            "&" => ConstructExpression(tokens, termExp!, out exp, GetComparerExpression, "&"),
+            "|" => ConstructExpression(tokens, termExp, out termExp!, GetAndExpressions, "|") & DispatcherTypeBoolS(tokens, termExp!, out exp),
+            "&" => ConstructExpression(tokens, termExp, out termExp!, GetComparerExpression, "&") & DispatcherTypeBoolS(tokens, termExp!, out exp),
             "==" or "!=" or "<=" => GetDefault(termExp, out exp),
             ">=" or ">" or "<" => GetDefault(termExp, out exp),
             "$" or ")" or "," or "\n" or "\r\n" => GetDefault(termExp, out exp),
@@ -400,25 +410,25 @@ public class Parser
         var startIndex = tokenIndex;
         var message = TemplatesErrors.EXPECTEDERROR_1;
 
-        if (AddExc(exist) && DispatcherTypeString(tokens, out exp))
-            return true;
-        tokenIndex = startIndex;
-        if (AddExc(exist) && GetNotExpressions(tokens, out exp))
-            return true;
-        exceptions.RemoveRange(exist, exceptions.Count - exist);
-        tokenIndex = startIndex;
+        // if (AddExc(exist) && DispatcherTypeString(tokens, out exp))
+        //     return true;
+        // tokenIndex = startIndex;
+        // if (AddExc(exist) && GetNotExpressions(tokens, out exp))
+        //     return true;
+        // exceptions.RemoveRange(exist, exceptions.Count - exist);
+        // tokenIndex = startIndex;
         if (DispatcherTypeNum(tokens, out exp))
             return true;
         tokenIndex = startIndex;
         return ResetDefault(startIndex, out exp, string.Format(message, "dos literales para comparar"), tokens[startIndex].Location + tokens[tokenIndex].Location);
     }
 
-    private bool GetNotExpressions(Tokens[] tokens, out IExpression? exp)
-    {
-        var exist = exceptions.Count;
-        return GetLUExpression(tokens, out exp, GetTBExpression, "!") ||
-               AddExc(exist) && GetTBExpression(tokens, out exp);
-    }
+    //private bool GetNotExpressions(Tokens[] tokens, out IExpression? exp)
+    //{
+    //    var exist = exceptions.Count;
+    //    return GetLUExpression(tokens, out exp, GetTBExpression, "!") ||
+    //           AddExc(exist) && GetTBExpression(tokens, out exp);
+    //}
 
     private bool GetTBExpression(Tokens[] tokens, out IExpression? exp) =>
         GetTermExpression(tokens, TokenType.Bool, out exp, GetBooleanExpression);
