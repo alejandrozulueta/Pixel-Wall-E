@@ -62,7 +62,6 @@
 
                         <TextBox x:Name="Lines" 
                              IsReadOnly="True"
-                             Text="1"
                              Grid.Column="0"/>
                         <Grid Grid.Column="1">
                             <RichTextBox x:Name="CodeEditor" 

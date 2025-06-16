@@ -68,7 +68,7 @@ namespace Visual
 
         private void UnderLineErrors(ErrorTypes error, int line, int startChar, int endChar)
         {
-            var paragraph = CodeEditor.Document.Blocks.ElementAt(line - 1) as Paragraph;
+            var paragraph = CodeEditor.Document.Blocks.ElementAtOrDefault(line - 1) as Paragraph;
             if (paragraph == null) return;
 
             TextPointer startPointer = paragraph.ContentStart.GetPositionAtOffset(startChar);
@@ -76,7 +76,7 @@ namespace Visual
 
             if (startPointer == null || endPointer == null) return;
 
-            TextRange errorRange = new TextRange(startPointer, endPointer);
+            TextRange errorRange = new(startPointer, endPointer);
 
             switch (error)
             {

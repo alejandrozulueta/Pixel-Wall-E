@@ -181,7 +181,7 @@ namespace Expressions.Visitors
 
             var info = funcDef.GetMethodInfo();
             var @params = Context.GetOParamsInfo(func, Methods.Function);
-            var returnType = info.ReturnType.ToValueType();
+            var returnType = Context.GetOReturnType(func).ToValueType();
 
             if (value.Length < @params.Length)
             {

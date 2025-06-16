@@ -46,6 +46,12 @@ public class Context(
         }
     }
 
+    public Type GetOReturnType(string name) 
+    {
+        Functions.TryGetValue(name, out FuncInfo? actAsFunc);
+        return actAsFunc!.ReturnType;
+    }
+
     public void PopScope()
     {
         if (CurrentScope == null)
@@ -60,10 +66,11 @@ public class Context(
     }
 }
 
-public class FuncInfo(Func<Values[], Values> func, ParameterInfo[] info)
+public class FuncInfo(Func<Values[], Values> func, ParameterInfo[] info, Type type)
 {
     public Func<Values[], Values> Func { get; set; } = func;
-    public ParameterInfo[] Info { get; set; } = info;    
+    public ParameterInfo[] Info { get; set; } = info;
+    public Type ReturnType { get; set; } = type;
 }
 
 public class ActionInfo(Action<Values[]> acts, ParameterInfo[] info)

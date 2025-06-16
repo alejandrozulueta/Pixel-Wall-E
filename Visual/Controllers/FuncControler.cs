@@ -74,7 +74,7 @@ namespace Visual.Controllers
                     return new Values(x.ReturnType.ToValueType(), result);
 
                 };
-                    return new { Key = x.Name, Value = new FuncInfo(@delegate, x.GetParameters()) };
+                    return new { Key = x.Name, Value = new FuncInfo(@delegate, x.GetParameters(), x.ReturnType) };
 
                 })
                 .ToDictionary(item => item.Key, item => item.Value);
