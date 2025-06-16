@@ -51,7 +51,7 @@ namespace Visual.Controllers
 
             IsValid(cx, cy, _paint.Canvas.Dimension);
             
-            for (int i = 0; i <= distance; i++)
+            for (int i = 0; i < distance; i++)
             {
                 int currentCenterX = startLineX + dirX * i;
                 int currentCenterY = startLineY + dirY * i;
@@ -125,10 +125,10 @@ namespace Visual.Controllers
             int interiorLeft = rectCenterX - (width - 1) / 2;
             int interiorTop = rectCenterY - (height - 1) / 2;
 
-            int left = interiorLeft - 1;
-            int right = interiorLeft + width;
-            int top = interiorTop - 1;
-            int bottom = interiorTop + height;
+            int left = interiorLeft;
+            int right = interiorLeft + width - 1;
+            int top = interiorTop;
+            int bottom = interiorTop + height - 1;
 
             Color color = _paint.Brush!.CurrentColor; ;
             int size = _paint.Brush.Size;
@@ -175,6 +175,9 @@ namespace Visual.Controllers
         {
             int brushOffset = (brushSize - 1) / 2;
             if (brushOffset < 0) brushOffset = 0;
+
+            if (color == System.Drawing.Color.Transparent)
+                return;
 
             for (int offsetY = -brushOffset; offsetY <= brushOffset; offsetY++)
             {

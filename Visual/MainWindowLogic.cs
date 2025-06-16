@@ -3,14 +3,17 @@ using Expressions.Enum;
 using System.Reflection;
 using System.Text;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Visual.Data;
 using Visual.Enums;
 using Visual.Interfaces;
+using System.IO;
 
 namespace Visual
 {
@@ -20,7 +23,7 @@ namespace Visual
         {
             SB.Clear();
             Canvas = new CanvasData(Canvas.Dimension);
-            Brush = null;
+            Brush = new BrushData(0, 0); 
             try
             {
                 main.ExecuteCode(codeInfo!);
@@ -115,6 +118,12 @@ namespace Visual
         private void DrawGrid()
         {
 
+            string exc = AppDomain.CurrentDomain.BaseDirectory;
+            DirectoryInfo directory = new DirectoryInfo(exc);
+
+            directory = directory.Parent!.Parent!.Parent!.Parent!; ;
+            string asset = System.IO.Path.Combine(directory.FullName, "Assets\\Wall_E.png");
+            
             DrawCanvas.Children.Clear();
 
             double widthCells = DrawCanvas.ActualWidth / Canvas.Dimension;
@@ -144,6 +153,29 @@ namespace Visual
                     System.Windows.Controls.Canvas.SetTop(celdaRect, i * heightCells);
 
                     DrawCanvas.Children.Add(celdaRect);
+
+                    if (Brush == null)
+                        continue;
+
+                    if (i == Brush!.CurrentX && j == Brush.CurrentY)
+                    {
+                        Image figureImage = new Image
+                        {
+                            Width = widthCells,   
+                            Height = heightCells,
+                            Source = new BitmapImage(new Uri(asset))
+                        };
+
+                        double scaleFactor = 1.7;
+
+                        figureImage.RenderTransformOrigin = new Point(0.5, 0.5);
+                        figureImage.RenderTransform = new ScaleTransform(scaleFactor, scaleFactor);
+
+                        System.Windows.Controls.Canvas.SetLeft(figureImage, j * widthCells);
+                        System.Windows.Controls.Canvas.SetTop(figureImage, i * heightCells);
+
+                        DrawCanvas.Children.Add(figureImage);
+                    }
                 }
             }
         }
