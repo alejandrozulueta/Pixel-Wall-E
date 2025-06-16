@@ -22,7 +22,6 @@ namespace Visual
         private void Excecute()
         {
             SB.Clear();
-            Canvas = new CanvasData(Canvas.Dimension);
             Brush = new BrushData(0, 0); 
             try
             {
@@ -40,7 +39,7 @@ namespace Visual
                 var error = ex;
 
                 UnderLineErrors(ErrorTypes.Execution, error.Location.Row, error.Location.InitCol, error.Location.EndCol);
-
+                DrawGrid();
                 return;
             }
             DrawGrid();
@@ -158,7 +157,7 @@ namespace Visual
                     if (Brush == null)
                         continue;
 
-                    if (i == Brush!.CurrentX && j == Brush.CurrentY)
+                    if (i == Brush!.CurrentY && j == Brush.CurrentX)
                     {
                         Image figureImage = new Image
                         {
