@@ -45,6 +45,8 @@ namespace Visual.Controllers
         {
             ValidDir(dirX, dirY);
 
+            ValidVal(distance, "Distancia");
+
             int startLineX = _paint.Brush!.CurrentX;
             int startLineY = _paint.Brush!.CurrentY;
 
@@ -67,6 +69,8 @@ namespace Visual.Controllers
         public void DrawCircle(int dirX, int dirY, int radius)
         {
             ValidDir(dirX, dirY);
+
+            ValidVal(radius, "Radio");
 
             radius += (radius + 1) % 2;
 
@@ -109,6 +113,10 @@ namespace Visual.Controllers
         public void DrawRectangle(int dirX, int dirY, int distance, int width, int height)
         {
             ValidDir(dirX, dirY);
+
+            ValidVal(distance, "Distancia");
+            ValidVal(width, "Ancho");
+            ValidVal(height, "Altura");
 
             int rectCenterX = _paint.Brush!.CurrentX + dirX * distance;
             int rectCenterY = _paint.Brush!.CurrentY + dirY * distance;
@@ -201,7 +209,7 @@ namespace Visual.Controllers
 
         private void CircleOctants(CanvasData canvas, int centerX, int centerY, int x, int y)
         {
-            Color color = _paint.Brush!.CurrentColor; ;
+            Color color = _paint.Brush!.CurrentColor; 
             int size = _paint.Brush.Size;
 
             PaintPixel(canvas, centerX + x, centerY + y, color, size);
@@ -225,7 +233,7 @@ namespace Visual.Controllers
             if (canvas.CellsColor[y, x] != targetColor)
                return;
 
-            if (mask[x, y] == true)
+            if (mask[x, y])
                 return;
 
             mask[x, y] = true;
@@ -269,6 +277,14 @@ namespace Visual.Controllers
             if(!(x >= 0 && x < dim && y >= 0 && y < dim)) 
             { 
                 throw new InvalidOperationException("Wall_E se sale del canvas");
+            }
+        }
+
+        private void ValidVal(int distance, string init)
+        {
+            if (distance < 0)
+            {
+                throw new InvalidOperationException($"{init} debe ser positivo/a");
             }
         }
 
