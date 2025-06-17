@@ -163,7 +163,9 @@ namespace Visual.Controllers
             Color fillColor = _paint.Brush.CurrentColor;
             int size = _paint.Brush.Size;
 
-            RecursiveFill(_paint.Canvas, _paint.Brush!.CurrentY, _paint.Brush!.CurrentX, targetColor, fillColor, size);
+            int dim = _paint.Canvas.Dimension;
+
+            RecursiveFill(_paint.Canvas, new bool[dim, dim], _paint.Brush!.CurrentY, _paint.Brush!.CurrentX, targetColor, fillColor, size);
         }
 
         [AttributeDefined("VisualActs")]
@@ -215,20 +217,25 @@ namespace Visual.Controllers
                 PaintPixel(canvas, centerX - y, centerY - x, color, size);
             }
         }
-        private void RecursiveFill(CanvasData canvas, int y, int x, Color targetColor, Color fillColor, int size)
+        private void RecursiveFill(CanvasData canvas, bool[,] mask, int y, int x, Color targetColor, Color fillColor, int size)
         {
             if (x < 0 || x >= canvas.Dimension || y < 0 || y >= canvas.Dimension)
                 return;
             
             if (canvas.CellsColor[y, x] != targetColor)
                return;
-            
+
+            if (mask[x, y] == true)
+                return;
+
+            mask[x, y] = true;
+
             PaintPixel(canvas, x, y, fillColor, 1);
 
-            RecursiveFill(canvas, x + 1, y, targetColor, fillColor, size);
-            RecursiveFill(canvas, x - 1, y, targetColor, fillColor, size);
-            RecursiveFill(canvas, x, y + 1, targetColor, fillColor, size);
-            RecursiveFill(canvas, x, y - 1, targetColor, fillColor, size);
+            RecursiveFill(canvas, mask, x + 1, y, targetColor, fillColor, size);
+            RecursiveFill(canvas, mask, x - 1, y, targetColor, fillColor, size);
+            RecursiveFill(canvas, mask, x, y + 1, targetColor, fillColor, size);
+            RecursiveFill(canvas, mask, x, y - 1, targetColor, fillColor, size);
         }
 
         
