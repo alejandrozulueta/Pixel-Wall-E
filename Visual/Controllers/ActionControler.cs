@@ -183,7 +183,7 @@ namespace Visual.Controllers
         }
 
         [AttributeDefined("VisualActs")]
-        public void Print(string value) 
+        public void Print(object value) 
         {
             string str = value.ToString()!;
             _print.SB.AppendLine(str);

@@ -17,6 +17,7 @@ namespace Expressions.Extensions
                 Type T when T == typeof(double) => ValueType.Double,
                 Type T when T == typeof(string) => ValueType.String,
                 Type T when T == typeof(bool) => ValueType.Bool,
+                Type T when T == typeof(object) => ValueType.Object,
                 _ => throw new NotSupportedException($"Unsuported type: {type}")
             };
         }

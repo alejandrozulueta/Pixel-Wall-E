@@ -154,6 +154,10 @@ namespace Expressions.Visitors
             for (int i = 0; i < @params.Length; i++)
             {
                 var paramType = @params[i].ParameterType.ToValueType();
+
+                if (paramType == ValueType.Object)
+                    continue;
+
                 var valueType = value[i].Type;
                 if (paramType != valueType) 
                 {
@@ -200,6 +204,10 @@ namespace Expressions.Visitors
             for (int i = 0; i < @params.Length; i++)
             {
                 var paramType = @params[i].ParameterType.ToValueType();
+
+                if (paramType == ValueType.Object)
+                    continue;
+
                 var valueType = value[i].Type;
                 if (paramType != valueType)
                 {

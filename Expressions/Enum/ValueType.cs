@@ -6,4 +6,5 @@ public enum ValueType
     String,
     Bool,
     InvalidType,
+    Object,
 }
