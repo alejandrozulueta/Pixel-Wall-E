@@ -28,6 +28,14 @@ namespace Visual.Controllers
         }
 
         [AttributeDefined("VisualActs")]
+        public void MoveTo(int x, int y) 
+        {
+            IsValid(x, y, _paint.Canvas.Dimension);
+            _paint.Brush!.CurrentX = x;
+            _paint.Brush!.CurrentY = y;
+        }
+
+        [AttributeDefined("VisualActs")]
         public void Color(string color)
         {
             _paint.Brush!.CurrentColor = color.ToColor();   
@@ -45,7 +53,7 @@ namespace Visual.Controllers
         {
             ValidDir(dirX, dirY);
 
-            ValidVal(distance, "Distancia");
+            ValidVal((distance, "Distancia"));
 
             int startLineX = _paint.Brush!.CurrentX;
             int startLineY = _paint.Brush!.CurrentY;
@@ -70,7 +78,7 @@ namespace Visual.Controllers
         {
             ValidDir(dirX, dirY);
 
-            ValidVal(radius, "Radio");
+            ValidVal((radius, "Radio"));
 
             radius += (radius + 1) % 2;
 
@@ -114,9 +122,7 @@ namespace Visual.Controllers
         {
             ValidDir(dirX, dirY);
 
-            ValidVal(distance, "Distancia");
-            ValidVal(width, "Ancho");
-            ValidVal(height, "Altura");
+            ValidVal((distance, "Distancia"), (width, "Ancho"), (height, "Altura"));
 
             int rectCenterX = _paint.Brush!.CurrentX + dirX * distance;
             int rectCenterY = _paint.Brush!.CurrentY + dirY * distance;
@@ -280,11 +286,12 @@ namespace Visual.Controllers
             }
         }
 
-        private void ValidVal(int distance, string init)
+        private void ValidVal(params (int, string)[] distances)
         {
-            if (distance < 0)
+            foreach (var init in distances)
             {
-                throw new InvalidOperationException($"{init} debe ser positivo/a");
+                if (init.Item1 < 0)
+                    throw new InvalidOperationException($"{init.Item2} debe ser positivo/a");
             }
         }
 
