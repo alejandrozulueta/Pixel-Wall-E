@@ -14,7 +14,7 @@ public static class StringExtensions
             "-" => BinaryTypes.Sub,
             "*" => BinaryTypes.Mult,
             "/" => BinaryTypes.Div,
-            "^" => BinaryTypes.Pow,
+            "**" => BinaryTypes.Pow,
             "%" => BinaryTypes.Modul,
             "==" => BinaryTypes.Equal,
             "!=" => BinaryTypes.Inequal,

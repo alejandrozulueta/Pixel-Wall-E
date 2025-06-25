@@ -20,7 +20,8 @@ public static class Lexer
                 + @"|"".*\r\n"
                 + @"|"".*\n"
                 + @"|(==|>=|<=|!= |<-)"
-                + @"|([\[\]\(\)\+\-\*/%^><\&\|,!])"
+                + @"|\*\*"
+                + @"|([\[\]\(\)\+\-\*/%><\&\|,!])"
                 + @"|[\t ]"
                 + @"|\r\n|\n"
                 + @"|."
@@ -94,7 +95,7 @@ public static class Lexer
             ")" => TokenType.CloseParenthesis,
             "[" => TokenType.OpenBracket,
             "]" => TokenType.CloseBracket,
-            "^" => TokenType.BinaryOperator,
+            "**" => TokenType.BinaryOperator,
             "&" or "|" => TokenType.BinaryOperator,
             "GoTo" => TokenType.Goto,
             "\r\n" or "\n" => TokenType.EndOfLine,

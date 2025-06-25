@@ -28,7 +28,7 @@ public class Parser
         { "*", OpFunc.Shift },
         { "/", OpFunc.Reduce },
         { "%", OpFunc.Reduce },
-        { "^", OpFunc.Shift },
+        { "**", OpFunc.Shift },
         { "|", OpFunc.Shift },
         { "&", OpFunc.Shift },
         { "!", OpFunc.Shift },
@@ -309,7 +309,7 @@ public class Parser
         {
             "+" or "-" => ConstructExpression(tokens, termExp!, out termExp, GetMultExpressions, "+", "-") & DispatcherTypeNumS(tokens, termExp!, out exp),
             "/" or "*" => ConstructExpression(tokens, termExp!, out termExp, GetPowExpressions, "/", "*") & DispatcherTypeNumS(tokens, termExp!, out exp),
-            "^" => ConstructExpression(tokens, termExp!, out termExp, GetLUNExpression, "^") & DispatcherTypeNumS(tokens, termExp!, out exp),
+            "**" => ConstructExpression(tokens, termExp!, out termExp, GetLUNExpression, "**") & DispatcherTypeNumS(tokens, termExp!, out exp),
             "==" or "!=" or "<=" => GetDefault(termExp, out exp),
             ">=" or ">" or "<" => GetDefault(termExp, out exp),
             "$" or ")" or "," or "\n" or "\r\n" => GetDefault(termExp, out exp),
@@ -376,7 +376,7 @@ public class Parser
         GetExpression(tokens, out multExp, GetPowExpressions, "*", "/", "%");
 
     private bool GetPowExpressions(Tokens[] tokens, out IExpression? powExp) =>
-        GetExpression(tokens, out powExp, GetLUNExpression, "^");
+        GetExpression(tokens, out powExp, GetLUNExpression, "**");
 
     private bool GetLUNExpression(Tokens[] tokens, out IExpression? exp)
     {
