@@ -94,6 +94,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBox x:Name="Errors" Grid.Column="0" 
              IsReadOnly="True" VerticalScrollBarVisibility="Auto"
+                                         HorizontalScrollBarVisibility="Auto"
              Visibility="Visible"/>
                                 <TextBox x:Name="ErrorsLine" Grid.Column="1"
                                     IsReadOnly="True" VerticalScrollBarVisibility="Auto"

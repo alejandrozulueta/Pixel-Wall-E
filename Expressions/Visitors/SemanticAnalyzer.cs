@@ -139,14 +139,14 @@ namespace Expressions.Visitors
             if (value.Length < @params.Length) 
             { 
                 var param = @params[value.Length].Name;
-                message = $"No se ha introducido el parámetro {param}";
+                message = $"No se ha introducido el parámetro {value.Length} : {param}";
                 Exceptions.Add(new SemanticException(message, location));
                 return;
             }
 
             if(value.Length > @params.Length) 
             {
-                message = $"El método {action} no recibe {value.Length} parámetros";
+                message = $"El método {action} no recibe {value.Length} parámetros, recibe {@params.Length}";
                 Exceptions.Add(new SemanticException(message, location));
                 return;
             }
@@ -161,7 +161,7 @@ namespace Expressions.Visitors
                 var valueType = value[i].Type;
                 if (paramType != valueType) 
                 {
-                    message = $"Se esperaba un tipo {paramType} y se ha introducido un tipo {valueType}";
+                    message = $"Se esperaba un tipo {paramType} en parámetro {i} y se ha introducido un tipo {valueType}";
                     Exceptions.Add(new SemanticException(message, location));
                     return;
                 }
@@ -190,13 +190,13 @@ namespace Expressions.Visitors
             if (value.Length < @params.Length)
             {
                 var param = @params[value.Length].Name;
-                message = $"No se ha introducido el parámetro {param}";
+                message = $"No se ha introducido el parámetro {value.Length} : {param}";
                 return new Values(returnType);
             }
 
             if (value.Length > @params.Length)
             {
-                message = $"El método {funcDef} no recibe {value.Length} parámetros";
+                message = $"El método {funcDef} no recibe {value.Length} parámetros, recibe {@params.Length}";
                 Exceptions.Add(new SemanticException(message, location));
                 return new Values(returnType);
             }
@@ -211,7 +211,7 @@ namespace Expressions.Visitors
                 var valueType = value[i].Type;
                 if (paramType != valueType)
                 {
-                    message = $"Se esperaba un tipo {paramType} y se ha introducido un tipo {valueType}";
+                    message = $"Se esperaba un tipo {paramType} en parámetro {i} y se ha introducido un tipo {valueType}";
                     Exceptions.Add(new SemanticException(message, location));
                     return new Values(returnType);
                 }
