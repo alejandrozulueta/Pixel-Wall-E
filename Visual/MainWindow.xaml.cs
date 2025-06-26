@@ -81,7 +81,13 @@ namespace Visual
                 UpdateErrors(exceptions!);
                 foreach (var error in exceptions!)
                 {
-                    sb.AppendLine(error.Message);
+                    var msg = "";
+                    if (error is SemanticException)
+                        msg = "Semantic Exception. ";
+                    if (error is GramaticalExceptions)
+                        msg = "Gramatical Exception. ";
+
+                    sb.AppendLine(msg + error.Message);
                 }
                 Errors.Text = sb.ToString();
             }
